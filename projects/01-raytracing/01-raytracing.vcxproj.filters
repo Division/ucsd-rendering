@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="Current" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="..\..\main.cpp" />
+    <ClCompile Include="..\..\include\imgui\imgui.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\imgui\imgui_demo.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\imgui\imgui_draw.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\imgui\imgui_tables.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\imgui\imgui_widgets.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\utils\image\DDSLoader.cpp">
+      <Filter>Utils\image</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\utils\DebugDraw.cpp">
+      <Filter>Utils\debug</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\utils\CUDATexture.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\utils\FileLoader.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\RayTracing\BVH.cpp">
+      <Filter>Raytracing\kernel</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\RayTracing\RayTracing.cpp">
+      <Filter>Raytracing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\RayTracing\Scene.cpp">
+      <Filter>Raytracing</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\imgui\backends\imgui_impl_dx11.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\include\imgui\backends\imgui_impl_win32.cpp">
+      <Filter>Utils\imgui</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\pch.h" />
+    <ClInclude Include="..\..\include\imgui\imconfig.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\imgui.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\imgui_internal.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\imstb_rectpack.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\imstb_textedit.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\imstb_truetype.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\image\DDS.h">
+      <Filter>Utils\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\image\DDSLoader.h">
+      <Filter>Utils\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\image\DDSLoaderHelpers.h">
+      <Filter>Utils\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\image\DXGIFormat.h">
+      <Filter>Utils\image</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\DebugDraw.h">
+      <Filter>Utils\debug</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\CUDAHelper.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\CUDATexture.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\FileLoader.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\Memory.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RayTracing\BVH.h">
+      <Filter>Raytracing\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RayTracing\GPUScene.h">
+      <Filter>Raytracing\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RayTracing\Math.h">
+      <Filter>Raytracing\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RayTracing\Random.h">
+      <Filter>Raytracing\kernel</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RayTracing\RayTracing.h">
+      <Filter>Raytracing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\RayTracing\Scene.h">
+      <Filter>Raytracing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\backends\imgui_impl_dx11.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\include\imgui\backends\imgui_impl_win32.h">
+      <Filter>Utils\imgui</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Raytracing">
+      <UniqueIdentifier>{9b91b5ea-28c1-48a0-bf45-7d622e1eb69b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Raytracing\kernel">
+      <UniqueIdentifier>{f403cb50-41e9-4d29-8458-14b539ffca1f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils">
+      <UniqueIdentifier>{1810513b-f931-4c0f-9d8a-3d102137110d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\image">
+      <UniqueIdentifier>{5c12c7fb-ba11-409e-8868-9df15632a7b4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\debug">
+      <UniqueIdentifier>{f14a5221-70d8-4074-a89b-20d29918fc88}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Utils\imgui">
+      <UniqueIdentifier>{dc50a587-bdfc-4d00-9b3d-e2dba7ff7dcc}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\RayTracing\main_raytracing.cu">
+      <Filter>Raytracing\kernel</Filter>
+    </CudaCompile>
+    <CudaCompile Include="..\..\RayTracing\Random.cu">
+      <Filter>Raytracing\kernel</Filter>
+    </CudaCompile>
+  </ItemGroup>
+</Project>

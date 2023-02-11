@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{69DEDC41-07C0-41F6-A989-7AA6CEE0BD3A}</ProjectGuid>
+    <RootNamespace>RayTracing</RootNamespace>
+    <ProjectName>01-raytracing</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v143</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.7.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <LinkIncremental>true</LinkIncremental>
+    <IncludePath>$(ProjectDir);$(SolutionDir)\Common;$(SolutionDir)\Include;$(SolutionDir)\Include\imgui;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)</IncludePath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ExecutablePath>$(VC_ExecutablePath_x64);$(CommonExecutablePath)</ExecutablePath>
+    <IncludePath>$(ProjectDir);$(SolutionDir)\Common;$(SolutionDir)\Include;$(SolutionDir)\Include\imgui;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)</IncludePath>
+    <AllProjectIncludesArePublic>false</AllProjectIncludesArePublic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgUseStatic>false</VcpkgUseStatic>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>Disabled</Optimization>
+      <PreprocessorDefinitions>WIN32;WIN64;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <EnableModules>true</EnableModules>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>cudart_static.lib;d3d11.lib;d3dcompiler.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>$(ProjectDir)\Common;$(ProjectDir)\include</Include>
+    </CudaCompile>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <Optimization>MaxSpeed</Optimization>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <PreprocessorDefinitions>WIN32;WIN64;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <LanguageStandard>stdcpplatest</LanguageStandard>
+      <TreatWarningAsError>true</TreatWarningAsError>
+      <EnableModules>true</EnableModules>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <ForcedIncludeFiles>pch.h</ForcedIncludeFiles>
+    </ClCompile>
+    <Link>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>d3d11.lib;d3dcompiler.lib;cudart_static.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <CudaCompile>
+      <TargetMachinePlatform>64</TargetMachinePlatform>
+      <Include>$(ProjectDir)\Common;$(ProjectDir)\include</Include>
+    </CudaCompile>
+    <Manifest>
+      <EnableDpiAwareness>true</EnableDpiAwareness>
+    </Manifest>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\include\imgui\backends\imgui_impl_dx11.cpp" />
+    <ClCompile Include="..\..\include\imgui\backends\imgui_impl_win32.cpp" />
+    <ClCompile Include="..\..\include\imgui\imgui.cpp" />
+    <ClCompile Include="..\..\include\imgui\imgui_demo.cpp" />
+    <ClCompile Include="..\..\include\imgui\imgui_draw.cpp" />
+    <ClCompile Include="..\..\include\imgui\imgui_tables.cpp" />
+    <ClCompile Include="..\..\include\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="..\..\main.cpp" />
+    <ClCompile Include="..\..\RayTracing\BVH.cpp" />
+    <ClCompile Include="..\..\RayTracing\RayTracing.cpp" />
+    <ClCompile Include="..\..\RayTracing\Scene.cpp" />
+    <ClCompile Include="..\..\utils\CUDATexture.cpp" />
+    <ClCompile Include="..\..\utils\DebugDraw.cpp" />
+    <ClCompile Include="..\..\utils\FileLoader.cpp" />
+    <ClCompile Include="..\..\utils\image\DDSLoader.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\include\imgui\backends\imgui_impl_dx11.h" />
+    <ClInclude Include="..\..\include\imgui\backends\imgui_impl_win32.h" />
+    <ClInclude Include="..\..\include\imgui\imconfig.h" />
+    <ClInclude Include="..\..\include\imgui\imgui.h" />
+    <ClInclude Include="..\..\include\imgui\imgui_internal.h" />
+    <ClInclude Include="..\..\include\imgui\imstb_rectpack.h" />
+    <ClInclude Include="..\..\include\imgui\imstb_textedit.h" />
+    <ClInclude Include="..\..\include\imgui\imstb_truetype.h" />
+    <ClInclude Include="..\..\pch.h" />
+    <ClInclude Include="..\..\RayTracing\BVH.h" />
+    <ClInclude Include="..\..\RayTracing\GPUScene.h" />
+    <ClInclude Include="..\..\RayTracing\Math.h" />
+    <ClInclude Include="..\..\RayTracing\Random.h" />
+    <ClInclude Include="..\..\RayTracing\RayTracing.h" />
+    <ClInclude Include="..\..\RayTracing\Scene.h" />
+    <ClInclude Include="..\..\utils\CUDAHelper.h" />
+    <ClInclude Include="..\..\utils\CUDATexture.h" />
+    <ClInclude Include="..\..\utils\DebugDraw.h" />
+    <ClInclude Include="..\..\utils\FileLoader.h" />
+    <ClInclude Include="..\..\utils\image\DDS.h" />
+    <ClInclude Include="..\..\utils\image\DDSLoader.h" />
+    <ClInclude Include="..\..\utils\image\DDSLoaderHelpers.h" />
+    <ClInclude Include="..\..\utils\image\DXGIFormat.h" />
+    <ClInclude Include="..\..\utils\Memory.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\README.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <CudaCompile Include="..\..\RayTracing\main_raytracing.cu" />
+    <CudaCompile Include="..\..\RayTracing\Random.cu" />
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+    <Import Project="$(VCTargetsPath)\BuildCustomizations\CUDA 11.7.targets" />
+  </ImportGroup>
+</Project>
