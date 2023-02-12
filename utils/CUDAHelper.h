@@ -1,6 +1,8 @@
 #pragma once
 
 #include "helper_cuda.h"
+#include <optix.h>
+#include <iostream>
 
 namespace CUDA
 {
@@ -17,9 +19,68 @@ namespace CUDA
 		}
 	}
 
+	inline void optixCheck(OptixResult res, const char* call, const char* file, unsigned int line)
+	{
+		if (res != OPTIX_SUCCESS)
+		{
+			std::cout << "Optix call '" << call << "' failed: " << file << ':' << line << ")\n";
+#ifdef _DEBUG
+			__debugbreak();
+#endif
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	inline void optixCheckLog(OptixResult  res,
+		const char* log,
+		size_t       sizeof_log,
+		size_t       sizeof_log_returned,
+		const char* call,
+		const char* file,
+		unsigned int line)
+	{
+		if (res != OPTIX_SUCCESS)
+		{
+			std::cout << "Optix call '" << call << "' failed: " << file << ':' << line << ")\nLog:\n"
+				<< log << (sizeof_log_returned > sizeof_log ? "<TRUNCATED>" : "") << '\n';
+#ifdef _DEBUG
+			__debugbreak();
+#endif
+			exit(EXIT_FAILURE);
+		}
+	}
+
+	inline void cudaSyncCheck(const char* file, unsigned int line)
+	{
+		cudaDeviceSynchronize();
+		cudaError_t error = cudaGetLastError();
+		if (error != cudaSuccess)
+		{
+			std::cout << "CUDA error on synchronize with error '"
+				<< cudaGetErrorString(error) << "' (" << file << ":" << line << ")\n";
+#ifdef _DEBUG
+			__debugbreak();
+#endif
+			exit(EXIT_FAILURE);
+		}
+	}
+
 }
 
 #define CUDA_CHECK(val) CUDA::check((val), #val, __FILE__, __LINE__)
+#define OPTIX_CHECK( call ) CUDA::optixCheck(call, #call, __FILE__, __LINE__)
+#define OPTIX_CHECK_NOTHROW( call ) OPTIX_CHECK(call)
+#define CUDA_SYNC_CHECK() CUDA::cudaSyncCheck( __FILE__, __LINE__ )
+
+#define OPTIX_CHECK_LOG( call )                                                \
+    do                                                                         \
+    {                                                                          \
+        char   LOG[2048];                                                      \
+        size_t LOG_SIZE = sizeof( LOG );                                       \
+        CUDA::optixCheckLog( call, LOG, sizeof( LOG ), LOG_SIZE, #call,     \
+                                __FILE__, __LINE__ );                          \
+    } while( false )
+
 
 #ifdef __NVCC__
 	#define CUDA_HOST __host__

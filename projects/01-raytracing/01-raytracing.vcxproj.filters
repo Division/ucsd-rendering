@@ -44,6 +44,9 @@
     <ClCompile Include="..\..\include\imgui\backends\imgui_impl_win32.cpp">
       <Filter>Utils\imgui</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\RayTracing\optix.cpp">
+      <Filter>Raytracing</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\pch.h" />
@@ -116,6 +119,9 @@
     <ClInclude Include="..\..\include\imgui\backends\imgui_impl_win32.h">
       <Filter>Utils\imgui</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\RayTracing\optix.h">
+      <Filter>Raytracing</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Raytracing">
@@ -136,6 +142,9 @@
     <Filter Include="Utils\imgui">
       <UniqueIdentifier>{dc50a587-bdfc-4d00-9b3d-e2dba7ff7dcc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="kernel">
+      <UniqueIdentifier>{41fc6b45-f094-4654-a6c6-4faec4f9f20d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
@@ -146,6 +155,9 @@
     </CudaCompile>
     <CudaCompile Include="..\..\RayTracing\Random.cu">
       <Filter>Raytracing\kernel</Filter>
+    </CudaCompile>
+    <CudaCompile Include="triangle.cu">
+      <Filter>kernel</Filter>
     </CudaCompile>
   </ItemGroup>
 </Project>

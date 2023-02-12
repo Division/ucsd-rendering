@@ -14,6 +14,7 @@
 #include <helper_cuda.h>
 #include <helper_functions.h>  // includes cuda.h and cuda_runtime_api.h
 #include "utils/CUDAHelper.h"
+#include "RayTracing/optix.h"
 
 #include "RayTracing/RayTracing.h"
 using namespace RayTracing;
@@ -25,6 +26,9 @@ static auto* SDK_name = "simpleD3D11Texture";
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx11.h"
+
+
+
 
 //-----------------------------------------------------------------------------
 // Global variables
@@ -350,6 +354,8 @@ int main(int argc, char* argv[]) {
 	if (SUCCEEDED(InitD3D(hWnd))) {
 		CreateResolutionDependentResources();
 	}
+
+	CUDA::SetupOptix(g_WindowWidth, g_WindowHeight, (uint32_t)GetSurface().pitch, GetSurface().last_frame_surface);
 
 	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();

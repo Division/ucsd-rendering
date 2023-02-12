@@ -190,7 +190,7 @@ namespace RayTracing
 
 		scene->Upload(static_cast<curandState*>(rng_state->GetMemory()));
 		raytracing_process(surface.surface, surface.last_frame_surface, surface.width, surface.height, surface.pitch, frame_index, scene.get());
-		CUDA_CHECK(cudaMemcpy(surface.last_frame_surface, surface.surface, surface.pitch * surface.height, cudaMemcpyDeviceToDevice));
+		//CUDA_CHECK(cudaMemcpy(surface.last_frame_surface, surface.surface, surface.pitch * surface.height, cudaMemcpyDeviceToDevice));
 		frame_index++;
 
 		//DebugDraw::DrawAABB({ vec3(9.0f, -9.5f, 20.0f) - 3.0f, vec3(9.0f, -9.5f, 20.0f) + 3.0f });

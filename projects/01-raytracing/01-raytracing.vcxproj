@@ -35,9 +35,11 @@
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\build.props" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\..\build.props" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -123,6 +125,7 @@
     <ClCompile Include="..\..\include\imgui\imgui_widgets.cpp" />
     <ClCompile Include="..\..\main.cpp" />
     <ClCompile Include="..\..\RayTracing\BVH.cpp" />
+    <ClCompile Include="..\..\RayTracing\optix.cpp" />
     <ClCompile Include="..\..\RayTracing\RayTracing.cpp" />
     <ClCompile Include="..\..\RayTracing\Scene.cpp" />
     <ClCompile Include="..\..\utils\CUDATexture.cpp" />
@@ -143,6 +146,7 @@
     <ClInclude Include="..\..\RayTracing\BVH.h" />
     <ClInclude Include="..\..\RayTracing\GPUScene.h" />
     <ClInclude Include="..\..\RayTracing\Math.h" />
+    <ClInclude Include="..\..\RayTracing\optix.h" />
     <ClInclude Include="..\..\RayTracing\Random.h" />
     <ClInclude Include="..\..\RayTracing\RayTracing.h" />
     <ClInclude Include="..\..\RayTracing\Scene.h" />
@@ -162,6 +166,19 @@
   <ItemGroup>
     <CudaCompile Include="..\..\RayTracing\main_raytracing.cu" />
     <CudaCompile Include="..\..\RayTracing\Random.cu" />
+    <CudaCompile Include="triangle.cu">
+      <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">optix-ir</NvccCompilation>
+      <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateRelocatableDeviceCode>
+      <GPUDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</GPUDebugInfo>
+      <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</FastMath>
+      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CudaIntDirFullPath)\%(Filename)%(Extension).obj</CompileOut>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</Keep>
+      <HostDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</HostDebugInfo>
+      <Keep Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</Keep>
+      <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateRelocatableDeviceCode>
+      <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">optix-ir</NvccCompilation>
+      <FastMath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</FastMath>
+    </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -178,6 +178,9 @@ __global__ void raytracing_kernel_main(RenderData render_data) {
     RGBA* pixel = (RGBA*)(render_data.surface + y * render_data.pitch) + x;
     RGBA* pixel_last_frame = (RGBA*)(render_data.surface_last_frame + y * render_data.pitch) + x;
 
+    *pixel = *pixel_last_frame;
+    return;
+
     // populate it
     const vec2 pixel_coords(x, y);
 
