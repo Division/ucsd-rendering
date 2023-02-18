@@ -26,9 +26,6 @@
     <ClCompile Include="..\..\utils\CUDATexture.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\utils\FileLoader.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\RayTracing\BVH.cpp">
       <Filter>Raytracing\kernel</Filter>
     </ClCompile>
@@ -46,9 +43,6 @@
     </ClCompile>
     <ClCompile Include="..\..\RayTracing\optix.cpp">
       <Filter>Raytracing</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\utils\OptixHelper.cpp">
-      <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -86,13 +80,7 @@
     <ClInclude Include="..\..\utils\DebugDraw.h">
       <Filter>Utils\debug</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\utils\CUDAHelper.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\utils\CUDATexture.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\utils\FileLoader.h">
       <Filter>Utils</Filter>
     </ClInclude>
     <ClInclude Include="..\..\utils\Memory.h">
@@ -124,9 +112,6 @@
     </ClInclude>
     <ClInclude Include="..\..\RayTracing\optix.h">
       <Filter>Raytracing</Filter>
-    </ClInclude>
-    <ClInclude Include="..\..\utils\OptixHelper.h">
-      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

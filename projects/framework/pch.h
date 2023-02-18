@@ -20,7 +20,8 @@
 #include <fstream>
 #include <optional>
 #include <cmath>
-#include <span>
+#include <span> 
+#include <optional>
 
 #pragma warning ( push )
 #pragma warning ( disable : 5105 )
@@ -34,4 +35,10 @@
 #include "glm/gtx/compatibility.hpp"
 #include "glm/gtx/intersect.hpp"
 
-#include <gsl/span>
+
+#include <optix.h>
+#include <optix_stack_size.h>
+#include <optix_stubs.h>
+
+#pragma comment (lib, "Onecore.lib")
+

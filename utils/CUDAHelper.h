@@ -1,11 +1,22 @@
 #pragma once
 
-#include "helper_cuda.h"
+//#include "helper_cuda.h"
 #include <optix.h>
 #include <iostream>
+#include "CudaError.h"
+#include <gsl/span>
 
 namespace CUDA
 {
+	//// CUDA Driver API errors
+	//static const char *_cudaGetErrorEnum(CUresult error) {
+	//  static char unknown[] = "<unknown>";
+	//  const char *ret = NULL;
+	//  cuGetErrorName(error, &ret);
+	//  return ret ? ret : unknown;
+	//}
+
+
 	template <typename T>
 	void check(T result, char const* const func, const char* const file,
 		int const line) {
@@ -186,6 +197,12 @@ namespace CUDA
 				throw std::runtime_error("allocation failed");
 		}
 
+		DeviceMemory(gsl::span<const uint8_t> data)
+			: DeviceMemory(data.size_bytes())
+		{
+			CUDA_CHECK(cudaMemcpy(memory, data.data(), data.size_bytes(), cudaMemcpyHostToDevice));
+		}
+
 		~DeviceMemory()
 		{
 			if (memory)
@@ -214,6 +231,7 @@ namespace CUDA
 
 		size_t GetSize() const { return size; }
 		void* GetMemory() const { return memory; }
+		CUdeviceptr GetCuDevPtr() const{ return (CUdeviceptr)memory; }
 	};
 
 }

@@ -14,6 +14,7 @@
     <ProjectGuid>{69DEDC41-07C0-41F6-A989-7AA6CEE0BD3A}</ProjectGuid>
     <RootNamespace>RayTracing</RootNamespace>
     <ProjectName>01-raytracing</ProjectName>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -50,6 +51,8 @@
     <ExecutablePath>$(VC_ExecutablePath_x64);$(CommonExecutablePath)</ExecutablePath>
     <IncludePath>$(ProjectDir);$(SolutionDir)\Common;$(SolutionDir)\Include;$(SolutionDir)\Include\imgui;$(VC_IncludePath);$(WindowsSDK_IncludePath);$(SolutionDir)</IncludePath>
     <AllProjectIncludesArePublic>false</AllProjectIncludesArePublic>
+    <OutDir>$(SolutionDir)$(Platform)\$(Configuration)\01-raytracing\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\01-raytracing\</IntDir>
   </PropertyGroup>
   <PropertyGroup Label="Vcpkg">
     <VcpkgEnableManifest>true</VcpkgEnableManifest>
@@ -131,9 +134,7 @@
     <ClCompile Include="..\..\RayTracing\Scene.cpp" />
     <ClCompile Include="..\..\utils\CUDATexture.cpp" />
     <ClCompile Include="..\..\utils\DebugDraw.cpp" />
-    <ClCompile Include="..\..\utils\FileLoader.cpp" />
     <ClCompile Include="..\..\utils\image\DDSLoader.cpp" />
-    <ClCompile Include="..\..\utils\OptixHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\imgui\backends\imgui_impl_dx11.h" />
@@ -152,16 +153,13 @@
     <ClInclude Include="..\..\RayTracing\Random.h" />
     <ClInclude Include="..\..\RayTracing\RayTracing.h" />
     <ClInclude Include="..\..\RayTracing\Scene.h" />
-    <ClInclude Include="..\..\utils\CUDAHelper.h" />
     <ClInclude Include="..\..\utils\CUDATexture.h" />
     <ClInclude Include="..\..\utils\DebugDraw.h" />
-    <ClInclude Include="..\..\utils\FileLoader.h" />
     <ClInclude Include="..\..\utils\image\DDS.h" />
     <ClInclude Include="..\..\utils\image\DDSLoader.h" />
     <ClInclude Include="..\..\utils\image\DDSLoaderHelpers.h" />
     <ClInclude Include="..\..\utils\image\DXGIFormat.h" />
     <ClInclude Include="..\..\utils\Memory.h" />
-    <ClInclude Include="..\..\utils\OptixHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
@@ -185,6 +183,11 @@
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</FastMath>
       <CompileOut Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)data\kernel\%(Filename)%(Extension).obj</CompileOut>
     </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\framework\framework.vcxproj">
+      <Project>{9afe0ebf-8544-41a6-b717-4e2ad55def0e}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
