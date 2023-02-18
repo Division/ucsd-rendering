@@ -244,8 +244,7 @@ namespace CUDA
 			pipeline_compile_options.usesPrimitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE;
 
 
-			auto data = Loader::LoadFile(L"D:/code/ucsd-rendering/projects/01-raytracing/x64/Debug/triangle.cu.obj");
-			//auto data = Loader::LoadFile(L"D:/code/optix_samples/lib/ptx/Debug/optixTriangle_generated_optixTriangle.cu.optixir");
+			auto data = Loader::LoadFile(L"data/kernel/triangle.cu.obj");
 			const size_t      inputSize = data->size();
 
 

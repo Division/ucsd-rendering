@@ -47,6 +47,9 @@
     <ClCompile Include="..\..\RayTracing\optix.cpp">
       <Filter>Raytracing</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\utils\OptixHelper.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\pch.h" />
@@ -121,6 +124,9 @@
     </ClInclude>
     <ClInclude Include="..\..\RayTracing\optix.h">
       <Filter>Raytracing</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\utils\OptixHelper.h">
+      <Filter>Utils</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

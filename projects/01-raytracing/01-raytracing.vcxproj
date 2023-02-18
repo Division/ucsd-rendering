@@ -81,6 +81,7 @@
     <CudaCompile>
       <TargetMachinePlatform>64</TargetMachinePlatform>
       <Include>$(ProjectDir)\Common;$(ProjectDir)\include</Include>
+      <CompileOut>$(SolutionDir)%(Filename)%(Extension).optixir</CompileOut>
     </CudaCompile>
     <Manifest>
       <EnableDpiAwareness>true</EnableDpiAwareness>
@@ -132,6 +133,7 @@
     <ClCompile Include="..\..\utils\DebugDraw.cpp" />
     <ClCompile Include="..\..\utils\FileLoader.cpp" />
     <ClCompile Include="..\..\utils\image\DDSLoader.cpp" />
+    <ClCompile Include="..\..\utils\OptixHelper.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\include\imgui\backends\imgui_impl_dx11.h" />
@@ -159,25 +161,29 @@
     <ClInclude Include="..\..\utils\image\DDSLoaderHelpers.h" />
     <ClInclude Include="..\..\utils\image\DXGIFormat.h" />
     <ClInclude Include="..\..\utils\Memory.h" />
+    <ClInclude Include="..\..\utils\OptixHelper.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
   </ItemGroup>
   <ItemGroup>
-    <CudaCompile Include="..\..\RayTracing\main_raytracing.cu" />
+    <CudaCompile Include="..\..\RayTracing\main_raytracing.cu">
+      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CudaIntDirFullPath)\%(Filename)%(Extension).obj</CompileOut>
+    </CudaCompile>
     <CudaCompile Include="..\..\RayTracing\Random.cu" />
     <CudaCompile Include="triangle.cu">
       <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">optix-ir</NvccCompilation>
       <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateRelocatableDeviceCode>
       <GPUDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</GPUDebugInfo>
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</FastMath>
-      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CudaIntDirFullPath)\%(Filename)%(Extension).obj</CompileOut>
+      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)data\kernel\%(Filename)%(Extension).obj</CompileOut>
       <Keep Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</Keep>
       <HostDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</HostDebugInfo>
       <Keep Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</Keep>
       <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateRelocatableDeviceCode>
       <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">optix-ir</NvccCompilation>
       <FastMath Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</FastMath>
+      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)data\kernel\%(Filename)%(Extension).obj</CompileOut>
     </CudaCompile>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
