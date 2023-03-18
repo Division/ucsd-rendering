@@ -16,47 +16,47 @@ namespace
 	class Camera {
 public:
     Camera()
-        : m_eye(make_float3(1.0f)), m_lookat(make_float3(0.0f)), m_up(make_float3(0.0f, 1.0f, 0.0f)), m_fovY(35.0f), m_aspectRatio(1.0f)
+        : m_eye(1.0f), m_lookat(0.0f), m_up(0.0f, 1.0f, 0.0f), m_fovY(glm::radians(35.0f)), m_aspectRatio(1.0f)
     {
     }
 
-    Camera(const float3& eye, const float3& lookat, const float3& up, float fovY, float aspectRatio)
+    Camera(const glm::vec3& eye, const glm::vec3& lookat, const glm::vec3& up, float fovY, float aspectRatio)
         : m_eye(eye), m_lookat(lookat), m_up(up), m_fovY(fovY), m_aspectRatio(aspectRatio)
     {
     }
 
-    float3 direction() const { return normalize(m_lookat - m_eye); }
-    void setDirection(const float3& dir) { m_lookat = m_eye + length(m_lookat - m_eye) * dir; }
+    glm::vec3 direction() const { return normalize(m_lookat - m_eye); }
+    void setDirection(const glm::vec3& dir) { m_lookat = m_eye + length(m_lookat - m_eye) * dir; }
 
-    const float3& eye() const { return m_eye; }
-    void setEye(const float3& val) { m_eye = val; }
-    const float3& lookat() const { return m_lookat; }
-    void setLookat(const float3& val) { m_lookat = val; }
-    const float3& up() const { return m_up; }
-    void setUp(const float3& val) { m_up = val; }
+    const glm::vec3& eye() const { return m_eye; }
+    void setEye(const glm::vec3& val) { m_eye = val; }
+    const glm::vec3& lookat() const { return m_lookat; }
+    void setLookat(const glm::vec3& val) { m_lookat = val; }
+    const glm::vec3& up() const { return m_up; }
+    void setUp(const glm::vec3& val) { m_up = val; }
     const float& fovY() const { return m_fovY; }
     void setFovY(const float& val) { m_fovY = val; }
     const float& aspectRatio() const { return m_aspectRatio; }
     void setAspectRatio(const float& val) { m_aspectRatio = val; }
 
     // UVW forms an orthogonal, but not orthonormal basis!
-	void UVWFrame(float3& U, float3& V, float3& W) const
+	void UVWFrame(glm::vec3& U, glm::vec3& V, glm::vec3& W) const
 	{
 		W = m_lookat - m_eye; // Do not normalize W -- it implies focal length
 		float wlen = length(W);
 		U = normalize(cross(W, m_up));
 		V = normalize(cross(U, W));
 
-		float vlen = wlen * tanf(0.5f * m_fovY * M_PIf / 180.0f);
+		float vlen = wlen * tanf(0.5f * m_fovY);
 		V *= vlen;
 		float ulen = vlen * m_aspectRatio;
 		U *= ulen;
 	}
 
 private:
-    float3 m_eye;
-    float3 m_lookat;
-    float3 m_up;
+    glm::vec3 m_eye;
+    glm::vec3 m_lookat;
+    glm::vec3 m_up;
     float m_fovY;
     float m_aspectRatio;
 };
@@ -77,8 +77,8 @@ namespace CUDA
 		unsigned int           image_width;
 		unsigned int           image_height;
 		unsigned int           pitch;
-		float3                 cam_eye;
-		float3                 cam_u, cam_v, cam_w;
+		glm::vec3	           cam_eye;
+		glm::vec3			   cam_u, cam_v, cam_w;
 		OptixTraversableHandle handle;
 	};
 
@@ -105,12 +105,12 @@ namespace CUDA
 	typedef SbtRecord<MissData>       MissSbtRecord;
 	typedef SbtRecord<HitGroupData>   HitGroupSbtRecord;
 
-	void configureCamera(Camera& cam, const uint32_t width, const uint32_t height)
+	void configureCamera(Camera& cam, const Loader::Scene::Camera& sceneCamera, const uint32_t width, const uint32_t height)
 	{
-		cam.setEye({ 0.0f, 0.0f, 2.0f });
-		cam.setLookat({ 0.0f, 0.0f, 0.0f });
-		cam.setUp({ 0.0f, 1.0f, 3.0f });
-		cam.setFovY(45.0f);
+		cam.setEye(sceneCamera.from);
+		cam.setLookat(sceneCamera.to);
+		cam.setUp(sceneCamera.up);
+		cam.setFovY(sceneCamera.fovY);
 		cam.setAspectRatio((float)width / (float)height);
 	}
 
@@ -194,7 +194,7 @@ namespace CUDA
 		//
 		{
 			Camera cam;
-			configureCamera(cam, width, height);
+			configureCamera(cam, scene->camera, width, height);
 
 			Params params;
 			params.image = outputBuffer;
