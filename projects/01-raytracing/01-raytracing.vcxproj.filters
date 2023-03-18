@@ -136,9 +136,45 @@
     <Filter Include="kernel">
       <UniqueIdentifier>{41fc6b45-f094-4654-a6c6-4faec4f9f20d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="testscenes">
+      <UniqueIdentifier>{21768915-a963-418f-9ed6-7fdf4cc18063}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="submissionscenes">
+      <UniqueIdentifier>{84cc5328-b352-4dbf-b440-e7da0d93e173}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
+    <None Include="..\..\data\homework1\testscenes\scene1.test">
+      <Filter>testscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\testscenes\scene2.test">
+      <Filter>testscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\testscenes\scene3.test">
+      <Filter>testscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene4-ambient.test">
+      <Filter>submissionscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene4-diffuse.test">
+      <Filter>submissionscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene4-emission.test">
+      <Filter>submissionscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene4-specular.test">
+      <Filter>submissionscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene5.test">
+      <Filter>submissionscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene6.test">
+      <Filter>submissionscenes</Filter>
+    </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene7.test">
+      <Filter>submissionscenes</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\RayTracing\main_raytracing.cu">
@@ -150,5 +186,31 @@
     <CudaCompile Include="triangle.cu">
       <Filter>kernel</Filter>
     </CudaCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera1.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera2.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera3.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera4.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene2-camera1.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene2-camera2.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene2-camera3.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
+    <Image Include="..\..\data\homework1\testscenes\scene3.jpg">
+      <Filter>testscenes</Filter>
+    </Image>
   </ItemGroup>
 </Project>

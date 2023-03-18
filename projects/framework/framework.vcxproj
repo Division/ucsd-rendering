@@ -84,6 +84,7 @@
   <ItemGroup>
     <ClCompile Include="..\..\utils\FileLoader.cpp" />
     <ClCompile Include="..\..\utils\OptixHelper.cpp" />
+    <ClCompile Include="Scene\SceneParser.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\utils\CudaError.h" />
@@ -91,6 +92,7 @@
     <ClInclude Include="..\..\utils\FileLoader.h" />
     <ClInclude Include="..\..\utils\OptixHelper.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="Scene\SceneParser.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -162,6 +162,16 @@
     <ClInclude Include="..\..\utils\Memory.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="..\..\data\homework1\submissionscenes\scene4-ambient.test" />
+    <None Include="..\..\data\homework1\submissionscenes\scene4-diffuse.test" />
+    <None Include="..\..\data\homework1\submissionscenes\scene4-emission.test" />
+    <None Include="..\..\data\homework1\submissionscenes\scene4-specular.test" />
+    <None Include="..\..\data\homework1\submissionscenes\scene5.test" />
+    <None Include="..\..\data\homework1\submissionscenes\scene6.test" />
+    <None Include="..\..\data\homework1\submissionscenes\scene7.test" />
+    <None Include="..\..\data\homework1\testscenes\scene1.test" />
+    <None Include="..\..\data\homework1\testscenes\scene2.test" />
+    <None Include="..\..\data\homework1\testscenes\scene3.test" />
     <None Include="..\..\README.md" />
   </ItemGroup>
   <ItemGroup>
@@ -188,6 +198,16 @@
     <ProjectReference Include="..\framework\framework.vcxproj">
       <Project>{9afe0ebf-8544-41a6-b717-4e2ad55def0e}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera1.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera2.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera3.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene1-camera4.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene2-camera1.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene2-camera2.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene2-camera3.jpg" />
+    <Image Include="..\..\data\homework1\testscenes\scene3.jpg" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

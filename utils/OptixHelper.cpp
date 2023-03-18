@@ -31,6 +31,42 @@ namespace Optix
 
 	namespace Acceleration
 	{
+		Init Init::Triangles(std::span<const glm::vec3> vertices)
+		{
+			Init result;
+			result.data = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(vertices.data()), vertices.size_bytes());
+			result.input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
+			result.input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
+			result.input.triangleArray.numVertices = static_cast<uint32_t>(vertices.size());
+			result.input.triangleArray.numSbtRecords = 1;
+			result.flags[0] = OPTIX_GEOMETRY_FLAG_NONE;
+
+			return result;
+		}
+
+		Init Init::Instances(std::span<const Instance> inputInstances)
+		{
+			Init result;
+			result.instances.resize(inputInstances.size());
+			for (uint32_t i = 0; i < inputInstances.size(); i++)
+			{
+				auto& inst = result.instances[i];
+				inst = {};
+				inst.visibilityMask = 255;
+				inst.sbtOffset = 0;
+				auto rowMajor = glm::transpose(inputInstances[i].transform);
+				memcpy(inst.transform, &rowMajor, sizeof(inst.transform));
+				inst.instanceId = i;
+				inst.traversableHandle = inputInstances[i].structure->GetHandle();
+			}
+
+			result.data = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(result.instances.data()), result.instances.size() * sizeof(OptixInstance));
+			result.input.type = OPTIX_BUILD_INPUT_TYPE_INSTANCES;
+			result.input.instanceArray.instanceStride = 0;
+			result.input.instanceArray.numInstances = static_cast<uint32_t>(inputInstances.size());
+
+			return result;
+		}
 
 		Structure::Structure(const Init& init)
 		{
@@ -41,15 +77,20 @@ namespace Optix
 			accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
 
 			OptixBuildInput input = init.input;
-			std::unique_ptr<CUDA::DeviceMemory> deviceVertices;
+			std::unique_ptr<CUDA::DeviceMemory> deviceDataBuffer;
 			CUdeviceptr memory = {};
 			switch (input.type)
 			{
 			case OPTIX_BUILD_INPUT_TYPE_TRIANGLES:
-				deviceVertices = std::make_unique<CUDA::DeviceMemory>(init.data);
-				memory = deviceVertices->GetCuDevPtr();
+				deviceDataBuffer = std::make_unique<CUDA::DeviceMemory>(init.data);
+				memory = deviceDataBuffer->GetCuDevPtr();
 				input.triangleArray.vertexBuffers = &memory;
 				input.triangleArray.flags = init.flags.data();
+				break;
+
+			case OPTIX_BUILD_INPUT_TYPE_INSTANCES:
+				deviceDataBuffer = std::make_unique<CUDA::DeviceMemory>(init.data);
+				input.instanceArray.instances = deviceDataBuffer->GetCuDevPtr();
 				break;
 
 			default:
@@ -83,7 +124,6 @@ namespace Optix
 				0                   // num emitted properties
 			));
 
-
 		}
 
 	}
@@ -97,10 +137,10 @@ namespace Optix
 #endif
 
 		pipelineOptions.usesMotionBlur = false;
-		pipelineOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS;
+		pipelineOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS | OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_LEVEL_INSTANCING;
 		pipelineOptions.numPayloadValues = numPayloadValues;
 		pipelineOptions.numAttributeValues = numAttribValues;
-#ifdef DEBUG // Enables debug exceptions during optix launches. This may incur significant performance cost and should only be done during development.
+#ifdef _DEBUG // Enables debug exceptions during optix launches. This may incur significant performance cost and should only be done during development.
 		pipelineOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_DEBUG | OPTIX_EXCEPTION_FLAG_TRACE_DEPTH | OPTIX_EXCEPTION_FLAG_STACK_OVERFLOW;
 #else
 		pipelineOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;

@@ -36,24 +36,21 @@ namespace Optix
 		{
 			friend class Structure;
 
+			struct Instance
+			{
+				glm::mat4 transform;
+				Structure* structure;
+			};
+
 		private:
+			std::vector<OptixInstance> instances;
 			std::span<const uint8_t> data;
 			OptixBuildInput input = {};
 			std::array<uint32_t, 8> flags;
 
 		public:
-			static Init Triangles(std::span<const glm::vec3> vertices)
-			{
-				Init result;
-				result.data = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(vertices.data()), vertices.size_bytes());
-				result.input.type = OPTIX_BUILD_INPUT_TYPE_TRIANGLES;
-				result.input.triangleArray.vertexFormat = OPTIX_VERTEX_FORMAT_FLOAT3;
-				result.input.triangleArray.numVertices = static_cast<uint32_t>(vertices.size());
-				result.input.triangleArray.numSbtRecords = 1;
-				result.flags[0] = OPTIX_GEOMETRY_FLAG_NONE;
-
-				return result;
-			}
+			static Init Triangles(std::span<const glm::vec3> vertices);
+			static Init Instances(std::span<const Instance> inputInstances);
 		};
 
 		class Structure

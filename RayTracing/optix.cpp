@@ -6,6 +6,7 @@
 #include <sutil/vec_math.h>
 #include "utils/OptixHelper.h"
 #include <optix_stubs.h>
+#include "Scene/SceneParser.h"
 
 
 using namespace Optix;
@@ -113,16 +114,51 @@ namespace CUDA
 		cam.setAspectRatio((float)width / (float)height);
 	}
 
+	struct SceneRenderData
+	{
+		std::vector<std::unique_ptr<Acceleration::Structure>> instancesAS;
+	};
+
+	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
+	{
+		SceneRenderData result;
+
+		std::vector<glm::vec3> vertices;
+		for (auto& instance : scene.instances)
+		{
+			vertices.reserve(instance.triangles.size() * 3);
+			vertices.clear();
+			for (auto& t : instance.triangles)
+			{
+				vertices.push_back(scene.vertices[t.v0]);
+				vertices.push_back(scene.vertices[t.v1]);
+				vertices.push_back(scene.vertices[t.v2]);
+			}
+
+			auto as = std::make_unique<Acceleration::Structure>(Acceleration::Init().Triangles(vertices));
+		}
+
+		return result;
+	}
+
 
 	void SetupOptix(const uint32_t width, const uint32_t height, const uint32_t pitch, void* outputBuffer)
 	{
-		if (!Optix::Initialize())
+		if (!Initialize())
 		{
 			std::cerr << "Failed to initialize optix\n";
 			throw std::runtime_error("Failed to initialize optix");
 		}
 
-		OptixDeviceContext context = Optix::GetContext();
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene1.test");
+		if (!scene)
+		{
+			throw std::runtime_error("Failed to load scene");
+		}
+
+		SceneRenderData renderData = GetSceneRenderData(*scene);
+
+		OptixDeviceContext context = GetContext();
 
 		//
 		// accel handling
@@ -135,9 +171,13 @@ namespace CUDA
 			  {  0.0f,  0.5f, 0.0f }
 		} };
 
-		
 		const auto asInit = Acceleration::Init::Triangles(vertices);
 		Acceleration::Structure accStructure(asInit);
+
+		std::array<Acceleration::Init::Instance, 1> instances;
+		instances[0].transform = glm::rotate(glm::identity<glm::mat4>(), (float)M_PI / 4, glm::vec3(0, 0, 1));
+		instances[0].structure = &accStructure;
+		Acceleration::Structure tlas(Acceleration::Init::Instances(instances));
 
 		//
 		// Create program groups
@@ -172,7 +212,7 @@ namespace CUDA
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;
-			params.handle = accStructure.GetHandle();
+			params.handle = tlas.GetHandle();
 			params.cam_eye = cam.eye();
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
