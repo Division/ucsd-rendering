@@ -117,6 +117,7 @@ namespace CUDA
 	struct SceneRenderData
 	{
 		std::vector<std::unique_ptr<Acceleration::Structure>> instancesAS;
+		std::unique_ptr<Acceleration::Structure> toplevelAS;
 	};
 
 	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
@@ -124,6 +125,8 @@ namespace CUDA
 		SceneRenderData result;
 
 		std::vector<glm::vec3> vertices;
+		std::vector<Acceleration::Init::Instance> instances;
+
 		for (auto& instance : scene.instances)
 		{
 			vertices.reserve(instance.triangles.size() * 3);
@@ -135,8 +138,13 @@ namespace CUDA
 				vertices.push_back(scene.vertices[t.v2]);
 			}
 
-			auto as = std::make_unique<Acceleration::Structure>(Acceleration::Init().Triangles(vertices));
+			const auto triangles = Acceleration::Init().Triangles(vertices);
+			result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(triangles));
+			instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get() });
 		}
+
+		const auto toplevel = Acceleration::Init().Instances(instances);
+		result.toplevelAS = std::make_unique<Acceleration::Structure>(toplevel);
 
 		return result;
 	}
@@ -159,25 +167,6 @@ namespace CUDA
 		SceneRenderData renderData = GetSceneRenderData(*scene);
 
 		OptixDeviceContext context = GetContext();
-
-		//
-		// accel handling
-		//
-		// Triangle build input: simple list of three vertices
-		const std::array<glm::vec3, 3> vertices =
-		{ {
-			  { -0.5f, -0.5f, 0.0f },
-			  {  0.5f, -0.5f, 0.0f },
-			  {  0.0f,  0.5f, 0.0f }
-		} };
-
-		const auto asInit = Acceleration::Init::Triangles(vertices);
-		Acceleration::Structure accStructure(asInit);
-
-		std::array<Acceleration::Init::Instance, 1> instances;
-		instances[0].transform = glm::rotate(glm::identity<glm::mat4>(), (float)M_PI / 4, glm::vec3(0, 0, 1));
-		instances[0].structure = &accStructure;
-		Acceleration::Structure tlas(Acceleration::Init::Instances(instances));
 
 		//
 		// Create program groups
@@ -212,7 +201,7 @@ namespace CUDA
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;
-			params.handle = tlas.GetHandle();
+			params.handle = renderData.toplevelAS->GetHandle();
 			params.cam_eye = cam.eye();
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
