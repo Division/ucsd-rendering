@@ -1,5 +1,7 @@
 #pragma once
 
+#include "Device/DeviceTypes.h"
+
 namespace Loader::Scene
 {
 
@@ -19,11 +21,7 @@ namespace Loader::Scene
 		uint32_t v2;
 	};
 
-	struct Sphere
-	{
-		glm::vec3 position;
-		float radius;
-	};
+	typedef Device::Geometry::Sphere Sphere;
 
 	struct DirectLight
 	{
@@ -37,19 +35,11 @@ namespace Loader::Scene
 		glm::vec3 color;
 	};
 
-	struct Instance
+	struct Instance : public Device::InstanceData
 	{
 		glm::mat4 transform = glm::identity<glm::mat4>();
-		glm::vec3 diffuse = {1, 1, 1};
-		glm::vec3 specular = {1, 1, 1};
-		glm::vec3 shininess = {1, 1, 1};
-		glm::vec3 emission = {1, 1, 1};
-		glm::vec3 ambient = { 0.2f, 0.2f, 0.2f };
-
 		std::vector<Sphere> spheres;
 		std::vector<Triangle> triangles;
-
-
 	};
 
 	class TextScene

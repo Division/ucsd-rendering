@@ -91,6 +91,7 @@
     <ClInclude Include="..\..\utils\CUDAHelper.h" />
     <ClInclude Include="..\..\utils\FileLoader.h" />
     <ClInclude Include="..\..\utils\OptixHelper.h" />
+    <ClInclude Include="Device\DeviceTypes.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Scene\SceneParser.h" />
   </ItemGroup>

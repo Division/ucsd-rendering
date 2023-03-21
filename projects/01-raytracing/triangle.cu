@@ -33,17 +33,7 @@
 
 #include <sutil/vec_math.h>
 
-struct Params
-{
-    uint8_t*               image;
-    unsigned int           image_width;
-    unsigned int           image_height;
-    unsigned int           pitch;
-    float3                 cam_eye;
-    float3                 cam_u, cam_v, cam_w;
-    OptixTraversableHandle handle;
-};
-
+#include "Device/DeviceTypes.h"
 
 struct RayGenData
 {
@@ -62,7 +52,7 @@ struct HitGroupData
     // No data needed
 };
 extern "C" {
-__constant__ Params params;
+__constant__ Device::Params params;
 }
 
 
@@ -76,15 +66,15 @@ static __forceinline__ __device__ void setPayload( float3 p )
 
 static __forceinline__ __device__ void computeRay( uint3 idx, uint3 dim, float3& origin, float3& direction )
 {
-    const float3 U = params.cam_u;
-    const float3 V = params.cam_v;
-    const float3 W = params.cam_w;
+    const float3 U = make_float3(params.cam_u.x, params.cam_u.y, params.cam_u.z);
+    const float3 V = make_float3(params.cam_v.x, params.cam_v.y, params.cam_v.z);
+    const float3 W = make_float3(params.cam_w.x, params.cam_w.y, params.cam_w.z);
     const float2 d = 2.0f * make_float2(
             static_cast<float>( idx.x ) / static_cast<float>( dim.x ),
             static_cast<float>( idx.y ) / static_cast<float>( dim.y )
             ) - 1.0f;
 
-    origin    = params.cam_eye;
+    origin    = make_float3(params.cam_eye.x, params.cam_eye.y, params.cam_eye.z);
     direction = normalize( d.x * U + d.y * V + W );
 }
 
@@ -139,7 +129,14 @@ extern "C" __global__ void __closesthit__ch()
 {
     // When built-in triangle intersection is used, a number of fundamental
     // attributes are provided by the OptiX API, indlucing barycentric coordinates.
-    const float2 barycentrics = optixGetTriangleBarycentrics();
+    //const float2 barycentrics = optixGetTriangleBarycentrics();
 
-    setPayload( make_float3( barycentrics, 1.0f ) );
+    //printf("hit\n");
+
+    const uint32_t instanceId = optixGetInstanceId();
+    const Device::InstanceData& instance = params.instances[instanceId];
+    const auto ambient = instance.ambient;
+    //const auto ambient = glm::vec3(1,0,0);
+
+    setPayload( make_float3( ambient.x, ambient.y, ambient.z) );
 }

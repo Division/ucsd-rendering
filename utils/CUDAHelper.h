@@ -203,6 +203,12 @@ namespace CUDA
 			CUDA_CHECK(cudaMemcpy(memory, data.data(), data.size_bytes(), cudaMemcpyHostToDevice));
 		}
 
+		template<typename T>
+		DeviceMemory(gsl::span<const T> data)
+			: DeviceMemory(gsl::span<const uint8_t>(reinterpret_cast<const uint8_t*>(data.data()), data.size_bytes()))
+		{}
+
+
 		~DeviceMemory()
 		{
 			if (memory)

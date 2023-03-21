@@ -44,6 +44,24 @@ namespace Optix
 			return result;
 		}
 
+		Init Init::Spheres(std::span<const Device::Geometry::Sphere> spheres)
+		{
+			Init result;
+			result.data = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(spheres.data()), spheres.size_bytes());
+			result.input = {};
+			result.input.type = OPTIX_BUILD_INPUT_TYPE_SPHERES;
+			result.input.sphereArray.numVertices = static_cast<uint32_t>(spheres.size());
+			result.input.sphereArray.numSbtRecords = 1;
+			result.input.sphereArray.primitiveIndexOffset = 0;
+			result.input.sphereArray.singleRadius = 0;
+			result.input.sphereArray.sbtIndexOffsetBuffer = 0;
+			result.input.sphereArray.radiusStrideInBytes = sizeof(Device::Geometry::Sphere);
+			result.input.sphereArray.vertexStrideInBytes = sizeof(Device::Geometry::Sphere);
+			result.flags[0] = OPTIX_GEOMETRY_FLAG_NONE;
+
+			return result;
+		}
+
 		Init Init::Instances(std::span<const Instance> inputInstances)
 		{
 			Init result;
@@ -73,12 +91,14 @@ namespace Optix
 			auto context = GetContext();
 
 			OptixAccelBuildOptions accel_options = {};
-			accel_options.buildFlags = OPTIX_BUILD_FLAG_NONE;
+			accel_options.buildFlags = OPTIX_BUILD_FLAG_ALLOW_RANDOM_VERTEX_ACCESS;
 			accel_options.operation = OPTIX_BUILD_OPERATION_BUILD;
 
 			OptixBuildInput input = init.input;
 			std::unique_ptr<CUDA::DeviceMemory> deviceDataBuffer;
+			std::unique_ptr<CUDA::DeviceMemory> radiusDataBuffer;
 			CUdeviceptr memory = {};
+			CUdeviceptr radiusMemory = {};
 			switch (input.type)
 			{
 			case OPTIX_BUILD_INPUT_TYPE_TRIANGLES:
@@ -86,6 +106,15 @@ namespace Optix
 				memory = deviceDataBuffer->GetCuDevPtr();
 				input.triangleArray.vertexBuffers = &memory;
 				input.triangleArray.flags = init.flags.data();
+				break;
+				
+			case OPTIX_BUILD_INPUT_TYPE_SPHERES:
+				deviceDataBuffer = std::make_unique<CUDA::DeviceMemory>(init.data);
+				memory = deviceDataBuffer->GetCuDevPtr();
+				radiusMemory = deviceDataBuffer->GetCuDevPtr() + sizeof(glm::vec3);
+				input.sphereArray.vertexBuffers = &memory;
+				input.sphereArray.radiusBuffers = &radiusMemory;
+				input.sphereArray.flags = init.flags.data();
 				break;
 
 			case OPTIX_BUILD_INPUT_TYPE_INSTANCES:
@@ -137,7 +166,7 @@ namespace Optix
 #endif
 
 		pipelineOptions.usesMotionBlur = false;
-		pipelineOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS | OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_LEVEL_INSTANCING;
+		pipelineOptions.traversableGraphFlags = OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_ANY;// OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_GAS | OPTIX_TRAVERSABLE_GRAPH_FLAG_ALLOW_SINGLE_LEVEL_INSTANCING;
 		pipelineOptions.numPayloadValues = numPayloadValues;
 		pipelineOptions.numAttributeValues = numAttribValues;
 #ifdef _DEBUG // Enables debug exceptions during optix launches. This may incur significant performance cost and should only be done during development.
@@ -146,7 +175,7 @@ namespace Optix
 		pipelineOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
 #endif
 		pipelineOptions.pipelineLaunchParamsVariableName = "params";
-		pipelineOptions.usesPrimitiveTypeFlags = primitiveTypeFlags;
+		pipelineOptions.usesPrimitiveTypeFlags = primitiveTypeFlags | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE;
 
 		auto result = Loader::LoadFile(ptxPath);
 		if (!result)
@@ -178,6 +207,14 @@ namespace Optix
 			&module
 		));
 
+        OptixModule sphere_module = nullptr;
+		OptixBuiltinISOptions builtin_is_options = {};
+
+		builtin_is_options.usesMotionBlur = false;
+		builtin_is_options.builtinISModuleType = OPTIX_PRIMITIVE_TYPE_SPHERE;
+		OPTIX_CHECK_LOG(optixBuiltinISModuleGet(GetContext(), &init.moduleOptions, &init.pipelineOptions,
+			&builtin_is_options, &sphere_module));
+
 		programsBlock.reserve(init.programs.size());
 		programs.reserve(init.programs.size());
 
@@ -201,6 +238,7 @@ namespace Optix
 			case OPTIX_PROGRAM_GROUP_KIND_HITGROUP:
 				program_desc.hitgroup.moduleCH = module;
 				program_desc.hitgroup.entryFunctionNameCH = programInfo.entryFunctionName.c_str();
+				program_desc.hitgroup.moduleIS = sphere_module;
 				break;
 			case OPTIX_PROGRAM_GROUP_KIND_MISS:
 				program_desc.miss.module = module;

@@ -37,30 +37,50 @@ vertex -1 +1 +1
 # No lighting calculations should be performed since I haven't defined any 
 # lights.
 
+pushTransform
 ambient .5 0 .5 
 # face -Y
 tri 0 1 5 
 tri 0 5 4 
+popTransform
+
+pushTransform
 ambient .5 1 .5 
 # face +Y
 tri 3 7 6
 tri 3 6 2
+popTransform
+
+pushTransform
 ambient 1 .5 .5 
 # face +X
 tri 1 2 6
 tri 1 6 5 
+popTransform
+
+pushTransform
 ambient 0 .5 .5 
 # face -X
 tri 0 7 3 
 tri 0 4 7 
+popTransform
+
+pushTransform
 ambient .5 .5 0
 # face -Z
 tri 0 3 2 
 tri 0 2 1
+popTransform
+
+pushTransform
 ambient .5 .5 1
 # face +Z
 tri 4 5 6 
 tri 4 6 7 
+popTransform
+
+
+pushTransform
 
 # Make spheres
 ambient 1 1 1
@@ -91,3 +111,5 @@ sphere -.5 +.5 -1 0.15
 sphere +.5 -.5 -1 0.15
 sphere +.5   0 -1 0.15
 sphere +.5 +.5 -1 0.15 
+
+popTransform

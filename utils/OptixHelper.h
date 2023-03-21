@@ -4,6 +4,7 @@
 #include <optix_stack_size.h>
 #include <optix_stubs.h>
 #include "CUDAHelper.h"
+#include "Device/DeviceTypes.h"
 
 namespace Optix
 {
@@ -50,6 +51,7 @@ namespace Optix
 
 		public:
 			static Init Triangles(std::span<const glm::vec3> vertices);
+			static Init Spheres(std::span<const Device::Geometry::Sphere> spheres);
 			static Init Instances(std::span<const Instance> inputInstances);
 		};
 

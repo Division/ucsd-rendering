@@ -71,18 +71,6 @@ namespace CUDA
 			<< message << "\n";
 	}
 
-	struct Params
-	{
-		void* image;
-		unsigned int           image_width;
-		unsigned int           image_height;
-		unsigned int           pitch;
-		glm::vec3	           cam_eye;
-		glm::vec3			   cam_u, cam_v, cam_w;
-		OptixTraversableHandle handle;
-	};
-
-
 	struct RayGenData
 	{
 		// No data needed
@@ -118,6 +106,7 @@ namespace CUDA
 	{
 		std::vector<std::unique_ptr<Acceleration::Structure>> instancesAS;
 		std::unique_ptr<Acceleration::Structure> toplevelAS;
+		std::unique_ptr<CUDA::DeviceMemory> instanceData;
 	};
 
 	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
@@ -126,6 +115,7 @@ namespace CUDA
 
 		std::vector<glm::vec3> vertices;
 		std::vector<Acceleration::Init::Instance> instances;
+		std::vector<Device::InstanceData> gpuInstanceData;
 
 		for (auto& instance : scene.instances)
 		{
@@ -138,13 +128,26 @@ namespace CUDA
 				vertices.push_back(scene.vertices[t.v2]);
 			}
 
-			const auto triangles = Acceleration::Init().Triangles(vertices);
-			result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(triangles));
-			instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get() });
+			if (vertices.size())
+			{
+				const auto triangles = Acceleration::Init::Triangles(vertices);
+				result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(triangles));
+				instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get() });
+				gpuInstanceData.push_back(instance);
+			}
+
+			if (instance.spheres.size())
+			{
+				const auto spheres = Acceleration::Init::Spheres(instance.spheres);
+				result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(spheres));
+				instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get() });
+				gpuInstanceData.push_back(instance);
+			}
 		}
 
-		const auto toplevel = Acceleration::Init().Instances(instances);
+		const auto toplevel = Acceleration::Init::Instances(instances);
 		result.toplevelAS = std::make_unique<Acceleration::Structure>(toplevel);
+		result.instanceData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::InstanceData>(gpuInstanceData));
 
 		return result;
 	}
@@ -158,7 +161,7 @@ namespace CUDA
 			throw std::runtime_error("Failed to initialize optix");
 		}
 
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene1.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene2.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -167,12 +170,12 @@ namespace CUDA
 		SceneRenderData renderData = GetSceneRenderData(*scene);
 
 		OptixDeviceContext context = GetContext();
-
+		optixDeviceContextSetCacheEnabled(context, 0);
 		//
 		// Create program groups
 		//
 
-		ModuleInit moduleInit(L"data/kernel/triangle.cu.obj", 3, 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE);
+		ModuleInit moduleInit(L"data/kernel/triangle.cu.obj", 3, 3, OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE );
 		moduleInit.AddProgram(OPTIX_PROGRAM_GROUP_KIND_RAYGEN, "__raygen__rg");
 		moduleInit.AddProgram(OPTIX_PROGRAM_GROUP_KIND_MISS, "__miss__ms");
 		moduleInit.AddProgram(OPTIX_PROGRAM_GROUP_KIND_HITGROUP, "__closesthit__ch");
@@ -183,7 +186,7 @@ namespace CUDA
 		// Link pipeline
 		//
 
-		PipelineInit pipelineInit(module, 1);
+		PipelineInit pipelineInit(module, 3);
 		pipelineInit.AddSbtValue(RayGenSbtRecord{}, OPTIX_PROGRAM_GROUP_KIND_RAYGEN);
 		pipelineInit.AddSbtValue(MissSbtRecord{ .data = { 0.3f, 0.1f, 0.2f } }, OPTIX_PROGRAM_GROUP_KIND_MISS);
 		pipelineInit.AddSbtValue(HitGroupSbtRecord{}, OPTIX_PROGRAM_GROUP_KIND_HITGROUP);
@@ -196,8 +199,9 @@ namespace CUDA
 			Camera cam;
 			configureCamera(cam, scene->camera, width, height);
 
-			Params params;
-			params.image = outputBuffer;
+			Device::Params params;
+			params.image = static_cast<uint8_t*>(outputBuffer);
+			params.instances = static_cast<const Device::InstanceData*>(renderData.instanceData->GetMemory());
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;
