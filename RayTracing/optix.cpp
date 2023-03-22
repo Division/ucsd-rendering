@@ -161,7 +161,7 @@ namespace CUDA
 			throw std::runtime_error("Failed to initialize optix");
 		}
 
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene2.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene3.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -175,10 +175,10 @@ namespace CUDA
 		// Create program groups
 		//
 
-		ModuleInit moduleInit(L"data/kernel/triangle.cu.obj", 3, 3, OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE );
-		moduleInit.AddProgram(OPTIX_PROGRAM_GROUP_KIND_RAYGEN, "__raygen__rg");
-		moduleInit.AddProgram(OPTIX_PROGRAM_GROUP_KIND_MISS, "__miss__ms");
-		moduleInit.AddProgram(OPTIX_PROGRAM_GROUP_KIND_HITGROUP, "__closesthit__ch");
+		ModuleInit moduleInit(L"data/kernel/triangle.cu.obj", 3, 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
+		moduleInit.AddRaygenProgram("__raygen__rg");
+		moduleInit.AddMissProgram("__miss__ms");
+		moduleInit.AddHitProgram("__closesthit__ch", "", "", true);
 
 		Module module(moduleInit);
 
@@ -187,9 +187,9 @@ namespace CUDA
 		//
 
 		PipelineInit pipelineInit(module, 3);
-		pipelineInit.AddSbtValue(RayGenSbtRecord{}, OPTIX_PROGRAM_GROUP_KIND_RAYGEN);
-		pipelineInit.AddSbtValue(MissSbtRecord{ .data = { 0.3f, 0.1f, 0.2f } }, OPTIX_PROGRAM_GROUP_KIND_MISS);
-		pipelineInit.AddSbtValue(HitGroupSbtRecord{}, OPTIX_PROGRAM_GROUP_KIND_HITGROUP);
+		pipelineInit.SetSbtValue(0, RayGenSbtRecord{});
+		pipelineInit.SetSbtValue(1, MissSbtRecord{ .data = { 0.3f, 0.1f, 0.2f } });
+		pipelineInit.SetSbtValue(2, HitGroupSbtRecord{});
 		Pipeline pipeline(pipelineInit);
 
 		//

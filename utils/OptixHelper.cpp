@@ -175,7 +175,7 @@ namespace Optix
 		pipelineOptions.exceptionFlags = OPTIX_EXCEPTION_FLAG_NONE;
 #endif
 		pipelineOptions.pipelineLaunchParamsVariableName = "params";
-		pipelineOptions.usesPrimitiveTypeFlags = primitiveTypeFlags | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE;
+		pipelineOptions.usesPrimitiveTypeFlags = primitiveTypeFlags;
 
 		auto result = Loader::LoadFile(ptxPath);
 		if (!result)
@@ -186,10 +186,47 @@ namespace Optix
 		ptxData = std::move(*result);
 	}
 
-
-	void ModuleInit::AddProgram(OptixProgramGroupKind kind, std::string entryFunctionName)
+	uint32_t ModuleInit::AddRaygenProgram(std::string entryFunctionName)
 	{
-		programs.push_back({ .kind = kind, .entryFunctionName = std::move(entryFunctionName) });
+		programs.push_back(std::make_unique<Program>());
+		auto& program = *programs.back();
+		program.entryFunctionName0 = std::move(entryFunctionName);
+		program.desc = {};
+		program.desc.kind = OPTIX_PROGRAM_GROUP_KIND_RAYGEN;
+		program.desc.raygen.entryFunctionName = program.entryFunctionName0.c_str();
+		return static_cast<uint32_t>(programs.size() - 1);
+	}
+
+	uint32_t ModuleInit::AddMissProgram(std::string entryFunctionName)
+	{
+		programs.push_back(std::make_unique<Program>());
+		auto& program = *programs.back();
+		program.entryFunctionName0 = std::move(entryFunctionName);
+		program.desc = {};
+		program.desc.kind = OPTIX_PROGRAM_GROUP_KIND_MISS;
+		program.desc.miss.entryFunctionName = program.entryFunctionName0.c_str();
+		return static_cast<uint32_t>(programs.size() - 1);
+	}
+
+	uint32_t ModuleInit::AddHitProgram(std::string entryFunctionCH, std::string entryFunctionAH, std::string entryFunctionIS, bool isSpheres)
+	{
+		programs.push_back(std::make_unique<Program>());
+		auto& program = *programs.back();
+		program.entryFunctionName0 = entryFunctionCH;
+		program.entryFunctionName1 = entryFunctionAH;
+		program.entryFunctionName2 = entryFunctionIS;
+		program.desc.kind = OPTIX_PROGRAM_GROUP_KIND_HITGROUP;
+
+		if (program.entryFunctionName0.size())
+			program.desc.hitgroup.entryFunctionNameCH = program.entryFunctionName0.c_str();
+		if (program.entryFunctionName1.size())
+			program.desc.hitgroup.entryFunctionNameAH = program.entryFunctionName1.c_str();
+		if (program.entryFunctionName2.size())
+			program.desc.hitgroup.entryFunctionNameIS = program.entryFunctionName2.c_str();
+
+		program.isSpheres = isSpheres;
+
+		return static_cast<uint32_t>(programs.size() - 1);
 	}
 
 
@@ -207,42 +244,43 @@ namespace Optix
 			&module
 		));
 
-        OptixModule sphere_module = nullptr;
+        OptixModule sphereModule = nullptr;
 		OptixBuiltinISOptions builtin_is_options = {};
 
 		builtin_is_options.usesMotionBlur = false;
 		builtin_is_options.builtinISModuleType = OPTIX_PRIMITIVE_TYPE_SPHERE;
 		OPTIX_CHECK_LOG(optixBuiltinISModuleGet(GetContext(), &init.moduleOptions, &init.pipelineOptions,
-			&builtin_is_options, &sphere_module));
+			&builtin_is_options, &sphereModule));
 
 		programsBlock.reserve(init.programs.size());
 		programs.reserve(init.programs.size());
 
 		for (uint32_t i = 0; i < init.programs.size(); i++)
 		{
-			auto& programInfo = init.programs[i];
+			const auto& programInfo = init.programs[i];
 			auto& program = programs.emplace_back();
 
 			OptixProgramGroupOptions program_group_options = {}; // Initialize to zeros
 
-			OptixProgramGroupDesc program_desc = {};
-			program_desc.kind = programInfo.kind;
-			program.kind = programInfo.kind;
+			OptixProgramGroupDesc program_desc = programInfo->desc;
+			program.kind = program_desc.kind;
 
-			switch (programInfo.kind)
+			switch (program_desc.kind)
 			{
 			case OPTIX_PROGRAM_GROUP_KIND_RAYGEN:
 				program_desc.raygen.module = module;
-				program_desc.raygen.entryFunctionName = programInfo.entryFunctionName.c_str();
 				break;
 			case OPTIX_PROGRAM_GROUP_KIND_HITGROUP:
 				program_desc.hitgroup.moduleCH = module;
-				program_desc.hitgroup.entryFunctionNameCH = programInfo.entryFunctionName.c_str();
-				program_desc.hitgroup.moduleIS = sphere_module;
+
+				if (programInfo->isSpheres)
+				{
+					program_desc.hitgroup.entryFunctionNameIS = nullptr;
+					program_desc.hitgroup.moduleIS = sphereModule;
+				}
 				break;
 			case OPTIX_PROGRAM_GROUP_KIND_MISS:
 				program_desc.miss.module = module;
-				program_desc.miss.entryFunctionName = programInfo.entryFunctionName.c_str();
 				break;
 			}
 
@@ -259,16 +297,14 @@ namespace Optix
 		}
 	}
 
-	OptixProgramGroup Module::GetProgram(OptixProgramGroupKind kind) const
+	const Module::Program& Module::GetProgram(uint32_t index) const
 	{
-		auto it = std::find_if(programs.begin(), programs.end(), [kind](auto& p) { return p.kind == kind; });
-
-		if (it == programs.end())
+		if (index >= programs.size())
 		{
-			throw Exception("Can't find program group kind in the module");
+			throw Exception("Can't find program index in the module");
 		}
 
-		return it->program;
+		return programs[index];
 	}
 
 
@@ -277,23 +313,24 @@ namespace Optix
 		: module(module)
 		, maxTraceDepth(maxTraceDepth)
 	{
-
+		sbtValues.resize(module.GetPrograms().size());
+		for (uint32_t i = 0; i < sbtValues.size(); i++)
+		{
+			sbtValues[i].kind = module.GetProgram(i).kind;
+			sbtValues[i].index = i;
+		}
 	}
 
-	void PipelineInit::AddSbtValue(std::span<const uint8_t> data, OptixProgramGroupKind kind, size_t stride)
+	void PipelineInit::SetSbtValue(uint32_t index, std::span<const uint8_t> data, size_t stride)
 	{
 		if (stride == 0)
 		{
 			stride = data.size_bytes();
 		}
 
-		auto it = std::find_if(sbtValues.begin(), sbtValues.end(), [kind](auto& sbt) { return sbt.kind == kind; });
-		if (it != sbtValues.end())
-		{
-			throw Exception("SbtValue kind already exists");
-		}
-
-		sbtValues.push_back(SbtValue{ .data = { data.begin(), data.end() }, .kind = kind, .stride = stride });
+		SbtValue& value = sbtValues.at(index);
+		value.data = { data.begin(), data.end() };
+		value.stride = stride;
 	}
 
 	Pipeline::Pipeline(const PipelineInit& init)
@@ -342,7 +379,7 @@ namespace Optix
 			localSbtValue = sbtValue.data;
 			for (uint32_t i = 0; i < recordCount; i++)
 			{
-				OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.kind), localSbtValue.data() + i * sbtValue.stride));
+				OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.index).program, localSbtValue.data() + i * sbtValue.stride));
 			}
 
 			auto memory = std::make_unique<CUDA::DeviceMemory>(localSbtValue);

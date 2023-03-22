@@ -76,16 +76,21 @@ namespace Optix
 	{
 		struct Program
 		{
-			OptixProgramGroupKind kind;
-			std::string entryFunctionName;
+			OptixProgramGroupDesc desc = {};
+			bool isSpheres = false;
+			std::string entryFunctionName0;
+			std::string entryFunctionName1;
+			std::string entryFunctionName2;
 		};
 
 		OptixPipelineCompileOptions pipelineOptions = {};
 		OptixModuleCompileOptions moduleOptions = {};
 		std::vector<uint8_t> ptxData;
-		std::vector<Program> programs;
+		std::vector<std::unique_ptr<Program>> programs;
 
-		void AddProgram(OptixProgramGroupKind kind, std::string entryFunctionName);
+		uint32_t AddRaygenProgram(std::string entryFunctionName);
+		uint32_t AddMissProgram(std::string entryFunctionName);
+		uint32_t AddHitProgram(std::string entryFunctionCH, std::string entryFunctionAH, std::string entryFunctionIS, bool isSpheres = false);
 
 		ModuleInit(const std::wstring& ptxPath, uint32_t numPayloadValues, uint32_t numAttribValues, uint32_t primitiveTypeFlags = OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE);
 	};
@@ -107,7 +112,7 @@ namespace Optix
 	public:
 		Module(const ModuleInit& init);
 
-		OptixProgramGroup GetProgram(OptixProgramGroupKind kind) const;
+		const Program& GetProgram(uint32_t index) const;
 		std::span<const OptixProgramGroup> GetPrograms() const { return programsBlock; }
 		OptixModule GetModule() const { return module; }
 		const OptixPipelineCompileOptions& GetPipelineOptions() const { return pipelineOptions; }
@@ -123,6 +128,7 @@ namespace Optix
 		{
 			std::vector<uint8_t> data;
 			OptixProgramGroupKind kind;
+			uint32_t index;
 			size_t stride;
 		};
 
@@ -130,18 +136,18 @@ namespace Optix
 
 		PipelineInit(const Module& module, uint32_t maxTraceDepth);
 
-		void AddSbtValue(std::span<const uint8_t> data, OptixProgramGroupKind kind, size_t stride = 0);
+		void SetSbtValue(uint32_t index, std::span<const uint8_t> data, size_t stride = 0);
 
 		template<typename T>
-		void AddSbtValue(const SbtRecord<T>& value, OptixProgramGroupKind kind)
+		void SetSbtValue(uint32_t index, const SbtRecord<T>& value)
 		{
-			AddSbtValue(std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&value), sizeof(value)), kind);
+			SetSbtValue(index, std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&value), sizeof(value)));
 		}
 
 		template<typename T>
-		void AddSbtValues(const std::span<const SbtRecord<T>> value, OptixProgramGroupKind kind)
+		void SetSbtValues(uint32_t index, const std::span<const SbtRecord<T>> value)
 		{
-			AddSbtValue(std::span<const uint8_t>(value.data(), value.size_bytes()), kind, sizeof(SbtRecord<T>));
+			SetSbtValue(std::span<const uint8_t>(index, value.data(), value.size_bytes()), sizeof(SbtRecord<T>));
 		}
 	};
 

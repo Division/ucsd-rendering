@@ -130,48 +130,49 @@ tri 4 6 7
 
 # Now draw the spheres
 
-ambient 0 1 0 
 popTransform
 pushTransform 
+ambient 0 1 0 
 translate  0 0 0.5
 rotate 0 0 1 45
 scale 1.0 0.25 0.25 
 sphere 0 0 0 1
 
-ambient 1 0 0
 popTransform
 pushTransform 
+ambient 1 0 0
 translate  0 0 0.5
 rotate 0 0 1 -45
 scale 1.0 0.25 0.25 
 sphere 0 0 0 1
 
-ambient 0 1 1 
 popTransform
 pushTransform
+ambient 0 1 1 
 translate -1.5 -.8 0.65
 scale 0.4 0.4 0.4
 sphere 0 0 0 1
 
-ambient 0 1 1 
 popTransform
 pushTransform
+ambient 0 1 1 
 translate 1.5 -.8 0.65
 scale 0.4 0.4 0.4
 sphere 0 0 0 1
 
-ambient 0 1 1 
 popTransform
 pushTransform
+ambient 0 1 1 
 translate 1.5 .8 0.65
 scale 0.4 0.4 0.4
 sphere 0 0 0 1
 
-ambient 0 1 1 
 popTransform
 pushTransform
+ambient 0 1 1 
 translate -1.5 .8 0.65
 scale 0.4 0.4 0.4
 sphere 0 0 0 1
+popTransform
 
 
