@@ -10,6 +10,8 @@
 #include "texture_types.h"
 #include <chrono>
 #include <array>
+#include <unordered_map>
+#include <unordered_set>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

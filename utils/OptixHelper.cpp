@@ -71,7 +71,7 @@ namespace Optix
 				auto& inst = result.instances[i];
 				inst = {};
 				inst.visibilityMask = 255;
-				inst.sbtOffset = 0;
+				inst.sbtOffset = inputInstances[i].sbtOffset;
 				auto rowMajor = glm::transpose(inputInstances[i].transform);
 				memcpy(inst.transform, &rowMajor, sizeof(inst.transform));
 				inst.instanceId = i;
@@ -313,24 +313,32 @@ namespace Optix
 		: module(module)
 		, maxTraceDepth(maxTraceDepth)
 	{
-		sbtValues.resize(module.GetPrograms().size());
-		for (uint32_t i = 0; i < sbtValues.size(); i++)
-		{
-			sbtValues[i].kind = module.GetProgram(i).kind;
-			sbtValues[i].index = i;
-		}
 	}
 
-	void PipelineInit::SetSbtValue(uint32_t index, std::span<const uint8_t> data, size_t stride)
+	void PipelineInit::AddSbtValue(OptixProgramGroupKind kind, uint32_t programIndex, std::span<const uint8_t> data, size_t stride)
 	{
 		if (stride == 0)
 		{
 			stride = data.size_bytes();
 		}
 
-		SbtValue& value = sbtValues.at(index);
-		value.data = { data.begin(), data.end() };
-		value.stride = stride;
+		if (data.size_bytes() % stride != 0)
+			throw Exception("Wrong stride or data size");
+
+		auto it = sbtValues.find(kind);
+		if (it == sbtValues.end())
+			it = sbtValues.insert({ kind, SbtValue{} }).first;
+		else if (it->second.stride != stride)
+			throw Exception("Stride mismatch");
+
+		SbtValue& sbtValue = it->second;
+		sbtValue.stride = stride;
+		sbtValue.kind = kind;
+		sbtValue.data.reserve(sbtValue.data.size() + data.size());
+		sbtValue.data.insert(sbtValue.data.end(), data.begin(), data.end());
+		const uint32_t count = static_cast<uint32_t>(data.size_bytes() / stride);
+		for (uint32_t i = 0; i < count; i++)
+			sbtValue.indices.push_back(programIndex);
 	}
 
 	Pipeline::Pipeline(const PipelineInit& init)
@@ -372,26 +380,26 @@ namespace Optix
 
 
 		std::vector<uint8_t> localSbtValue;
-		for (auto& sbtValue : init.sbtValues)
+		for (auto& it : init.sbtValues)
 		{
-			size_t recordCount = 1;
-			size_t recordStride = sizeof(EmptySbtRecord);
+
+			auto& sbtValue = it.second;
+
+			const uint32_t recordStride = static_cast<uint32_t>(sbtValue.stride);
+			const uint32_t recordCount = static_cast<uint32_t>(sbtValue.data.size() / recordStride);
 			
 			if (!sbtValue.data.empty())
 			{
-				recordCount = sbtValue.data.size() / recordStride;
-				recordStride = sbtValue.stride;
 				localSbtValue = sbtValue.data;
 
 				for (uint32_t i = 0; i < recordCount; i++)
 				{
-					OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.index).program, localSbtValue.data() + i * recordStride));
+					OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.indices[i]).program, localSbtValue.data() + i * recordStride));
 				}
 			}
 			else
 			{
-				localSbtValue.resize(sizeof(EmptySbtRecord));
-				OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.index).program, localSbtValue.data()));
+				throw Exception("Sbt data can't be empty");
 			}
 
 			auto memory = std::make_unique<CUDA::DeviceMemory>(localSbtValue);
@@ -411,6 +419,8 @@ namespace Optix
 				shaderBindingTable.missRecordStrideInBytes = (uint32_t)recordStride;
 				shaderBindingTable.missRecordCount = (uint32_t)recordCount;
 				break;
+			default:
+				throw Exception("Unknown sbt program kind");
 			}
 			sbtMemory.push_back(SbtData{ .memory = std::move(memory) });
 		}

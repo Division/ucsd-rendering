@@ -140,7 +140,7 @@ namespace CUDA
 			{
 				const auto spheres = Acceleration::Init::Spheres(instance.spheres);
 				result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(spheres));
-				instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get() });
+				instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get(), .sbtOffset = 1 });
 				gpuInstanceData.push_back(instance);
 			}
 		}
@@ -176,9 +176,10 @@ namespace CUDA
 		//
 
 		ModuleInit moduleInit(L"data/kernel/triangle.cu.obj", 3, 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
-		moduleInit.AddRaygenProgram("__raygen__rg");
-		moduleInit.AddMissProgram("__miss__ms");
-		moduleInit.AddHitProgram("__closesthit__ch", "", "", true);
+		const auto raygenIdx = moduleInit.AddRaygenProgram("__raygen__rg");
+		const auto missIdx = moduleInit.AddMissProgram("__miss__ms");
+		const auto hitIdx = moduleInit.AddHitProgram("__closesthit__ch", "", "", true);
+		const auto hitSphereIdx = moduleInit.AddHitProgram("__closesthit__sphere", "", "", true);
 
 		Module module(moduleInit);
 
@@ -187,7 +188,10 @@ namespace CUDA
 		//
 
 		PipelineInit pipelineInit(module, 3);
-		pipelineInit.SetSbtValue(1, MissSbtRecord{ .data = { 0.3f, 0.1f, 0.2f } });
+		pipelineInit.AddSbtValue(OPTIX_PROGRAM_GROUP_KIND_MISS, missIdx, MissSbtRecord{ .data = { 0.3f, 0.1f, 0.2f } });
+		pipelineInit.AddSbtValue(OPTIX_PROGRAM_GROUP_KIND_RAYGEN, raygenIdx, EmptySbtRecord{});
+		pipelineInit.AddSbtValue(OPTIX_PROGRAM_GROUP_KIND_HITGROUP, hitIdx, EmptySbtRecord{});
+		pipelineInit.AddSbtValue(OPTIX_PROGRAM_GROUP_KIND_HITGROUP, hitSphereIdx, EmptySbtRecord{});
 		Pipeline pipeline(pipelineInit);
 
 		//

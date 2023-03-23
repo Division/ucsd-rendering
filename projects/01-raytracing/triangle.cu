@@ -125,6 +125,17 @@ extern "C" __global__ void __miss__ms()
 }
 
 
+extern "C" __global__ void __closesthit__sphere()
+{
+    const uint32_t instanceId = optixGetInstanceId();
+    const Device::InstanceData& instance = params.instances[instanceId];
+    const auto ambient = instance.ambient;
+    //const auto ambient = glm::vec3(1,0,0);
+
+    setPayload( make_float3(0, 0, 1));
+}
+
+
 extern "C" __global__ void __closesthit__ch()
 {
     // When built-in triangle intersection is used, a number of fundamental

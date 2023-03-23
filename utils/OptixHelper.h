@@ -5,6 +5,7 @@
 #include <optix_stubs.h>
 #include "CUDAHelper.h"
 #include "Device/DeviceTypes.h"
+#include <unordered_map>
 
 namespace Optix
 {
@@ -41,6 +42,7 @@ namespace Optix
 			{
 				glm::mat4 transform;
 				Structure* structure;
+				uint32_t sbtOffset = 0;
 			};
 
 		private:
@@ -127,27 +129,27 @@ namespace Optix
 		struct SbtValue
 		{
 			std::vector<uint8_t> data;
+			std::vector<uint32_t> indices;
 			OptixProgramGroupKind kind;
-			uint32_t index;
 			size_t stride;
 		};
 
-		std::vector<SbtValue> sbtValues;
+		std::unordered_map<OptixProgramGroupKind, SbtValue> sbtValues;
 
 		PipelineInit(const Module& module, uint32_t maxTraceDepth);
 
-		void SetSbtValue(uint32_t index, std::span<const uint8_t> data, size_t stride = 0);
+		void AddSbtValue(OptixProgramGroupKind kind, uint32_t programIndex, std::span<const uint8_t> data, size_t stride = 0);
 
 		template<typename T>
-		void SetSbtValue(uint32_t index, const SbtRecord<T>& value)
+		void AddSbtValue(OptixProgramGroupKind kind, uint32_t programIndex, const SbtRecord<T>& value = EmptySbtRecord)
 		{
-			SetSbtValue(index, std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&value), sizeof(value)));
+			AddSbtValue(kind, programIndex, std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&value), sizeof(value)));
 		}
 
 		template<typename T>
-		void SetSbtValues(uint32_t index, const std::span<const SbtRecord<T>> value)
+		void AddSbtValues(OptixProgramGroupKind kind, uint32_t programIndex, const std::span<const SbtRecord<T>> value)
 		{
-			SetSbtValue(std::span<const uint8_t>(index, value.data(), value.size_bytes()), sizeof(SbtRecord<T>));
+			AddSbtValue(kind, programIndex, std::span<const uint8_t>(value.data(), value.size_bytes()), sizeof(SbtRecord<T>));
 		}
 	};
 
