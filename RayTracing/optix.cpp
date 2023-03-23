@@ -187,9 +187,7 @@ namespace CUDA
 		//
 
 		PipelineInit pipelineInit(module, 3);
-		pipelineInit.SetSbtValue(0, RayGenSbtRecord{});
 		pipelineInit.SetSbtValue(1, MissSbtRecord{ .data = { 0.3f, 0.1f, 0.2f } });
-		pipelineInit.SetSbtValue(2, HitGroupSbtRecord{});
 		Pipeline pipeline(pipelineInit);
 
 		//

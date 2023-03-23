@@ -374,12 +374,24 @@ namespace Optix
 		std::vector<uint8_t> localSbtValue;
 		for (auto& sbtValue : init.sbtValues)
 		{
-			const size_t recordCount = sbtValue.data.size() / sbtValue.stride;
-
-			localSbtValue = sbtValue.data;
-			for (uint32_t i = 0; i < recordCount; i++)
+			size_t recordCount = 1;
+			size_t recordStride = sizeof(EmptySbtRecord);
+			
+			if (!sbtValue.data.empty())
 			{
-				OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.index).program, localSbtValue.data() + i * sbtValue.stride));
+				recordCount = sbtValue.data.size() / recordStride;
+				recordStride = sbtValue.stride;
+				localSbtValue = sbtValue.data;
+
+				for (uint32_t i = 0; i < recordCount; i++)
+				{
+					OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.index).program, localSbtValue.data() + i * recordStride));
+				}
+			}
+			else
+			{
+				localSbtValue.resize(sizeof(EmptySbtRecord));
+				OPTIX_CHECK(optixSbtRecordPackHeader(module.GetProgram(sbtValue.index).program, localSbtValue.data()));
 			}
 
 			auto memory = std::make_unique<CUDA::DeviceMemory>(localSbtValue);
@@ -391,12 +403,12 @@ namespace Optix
 				break;
 			case OPTIX_PROGRAM_GROUP_KIND_HITGROUP:
 				shaderBindingTable.hitgroupRecordBase = memory->GetCuDevPtr();
-				shaderBindingTable.hitgroupRecordStrideInBytes = (uint32_t)sbtValue.stride;
+				shaderBindingTable.hitgroupRecordStrideInBytes = (uint32_t)recordStride;
 				shaderBindingTable.hitgroupRecordCount = (uint32_t)recordCount;
 				break;
 			case OPTIX_PROGRAM_GROUP_KIND_MISS:
 				shaderBindingTable.missRecordBase = memory->GetCuDevPtr();
-				shaderBindingTable.missRecordStrideInBytes = (uint32_t)sbtValue.stride;
+				shaderBindingTable.missRecordStrideInBytes = (uint32_t)recordStride;
 				shaderBindingTable.missRecordCount = (uint32_t)recordCount;
 				break;
 			}

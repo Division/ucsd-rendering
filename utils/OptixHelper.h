@@ -16,7 +16,7 @@ namespace Optix
 		T data;
 	};
 
-
+	typedef SbtRecord<uint8_t> EmptySbtRecord;
 
 	class Exception : public std::runtime_error
 	{
