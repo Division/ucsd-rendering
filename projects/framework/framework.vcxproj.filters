@@ -29,6 +29,9 @@
     <ClCompile Include="Scene\SceneParser.cpp">
       <Filter>Source Files\Scene</Filter>
     </ClCompile>
+    <ClCompile Include="Utils\Image.cpp">
+      <Filter>Source Files\Utils</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\utils\OptixHelper.h">
@@ -51,6 +54,9 @@
     </ClInclude>
     <ClInclude Include="Device\DeviceTypes.h">
       <Filter>Source Files\Device</Filter>
+    </ClInclude>
+    <ClInclude Include="Utils\Image.h">
+      <Filter>Source Files\Utils</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -186,21 +186,27 @@ namespace CUDA
 	class DeviceMemory
 	{
 		void* memory = nullptr;
-		size_t size;
+		size_t size = 0;
 	
 	public:
 		DeviceMemory(size_t size)
 			: size(size)
 		{
-			const auto result = cudaMalloc(&memory, size);
-			if (result != cudaSuccess)
-				throw std::runtime_error("allocation failed");
+			if (size)
+			{
+				const auto result = cudaMalloc(&memory, size);
+				if (result != cudaSuccess)
+					throw std::runtime_error("allocation failed");
+			}
 		}
 
 		DeviceMemory(gsl::span<const uint8_t> data)
 			: DeviceMemory(data.size_bytes())
 		{
-			CUDA_CHECK(cudaMemcpy(memory, data.data(), data.size_bytes(), cudaMemcpyHostToDevice));
+			if (data.size_bytes())
+			{
+				CUDA_CHECK(cudaMemcpy(memory, data.data(), data.size_bytes(), cudaMemcpyHostToDevice));
+			}
 		}
 
 		template<typename T>

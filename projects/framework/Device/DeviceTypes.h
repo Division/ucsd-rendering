@@ -7,21 +7,34 @@
 namespace Device
 {
 
-	namespace Geometry
+	namespace Scene
 	{
 		struct Sphere
 		{
 			glm::vec3 position;
 			float radius;
 		};
+
+		struct DirectLight
+		{
+			glm::vec3 direction;
+			glm::vec3 color;
+		};
+
+		struct PointLight
+		{
+			glm::vec3 position;
+			glm::vec3 color;
+		};
+
 	}
 
 	struct alignas(glm::vec4) InstanceData
 	{
 		glm::vec3 diffuse = {1, 1, 1};
 		glm::vec3 specular = {1, 1, 1};
-		glm::vec3 shininess = {1, 1, 1};
-		glm::vec3 emission = {1, 1, 1};
+		float shininess = 0;
+		glm::vec3 emission = {0, 0, 0};
 		glm::vec3 ambient = { 0.2f, 0.2f, 0.2f };
 	};
 
@@ -35,6 +48,8 @@ namespace Device
 		uint8_t* image;
 		const InstanceData* instances;
 		const InstanceExtraData* instancesExtraData;
+		const Scene::DirectLight* directLights;
+		const Scene::PointLight* pointLights;
 		const glm::vec3* triangleNormals;
 		unsigned int image_width;
 		unsigned int image_height;
@@ -42,6 +57,9 @@ namespace Device
 		glm::vec3 cam_eye;
 		glm::vec3 cam_u, cam_v, cam_w;
 		OptixTraversableHandle handle;
+		uint32_t directLightCount;
+		uint32_t pointLightCount;
+		glm::vec3 attenuation;
 	};
 
 

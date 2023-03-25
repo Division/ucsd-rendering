@@ -21,19 +21,9 @@ namespace Loader::Scene
 		uint32_t v2;
 	};
 
-	typedef Device::Geometry::Sphere Sphere;
-
-	struct DirectLight
-	{
-		glm::vec3 direction;
-		glm::vec3 color;
-	};
-
-	struct PointLight
-	{
-		glm::vec3 position;
-		glm::vec3 color;
-	};
+	typedef Device::Scene::Sphere Sphere;
+	typedef Device::Scene::DirectLight DirectLight;
+	typedef Device::Scene::PointLight PointLight;
 
 	struct Instance : public Device::InstanceData
 	{
@@ -57,6 +47,10 @@ namespace Loader::Scene
 		std::vector<PointLight> pointLights;
 		std::vector<Instance> instances;
 		std::vector<glm::vec3> vertices;
+
+		float constAttenuation = 1;
+		float linearAttenuation = 0;
+		float quadraticAttenuation = 0;
 
 	public:
 

@@ -26,7 +26,7 @@ static auto* SDK_name = "simpleD3D11Texture";
 #include "imgui.h"
 #include "backends/imgui_impl_win32.h"
 #include "backends/imgui_impl_dx11.h"
-
+#include "Utils/Image.h"
 
 
 
@@ -43,6 +43,7 @@ ID3D11RasterizerState* g_pRasterState = NULL;
 
 ID3D11InputLayout* g_pInputLayout = NULL;
 std::unique_ptr<CUDARayTracer> raytracer;
+bool gSaveImage = false;
 
 //
 // Vertex and Pixel shaders here : VS() & PS()
@@ -124,8 +125,8 @@ bool g_bPassed = true;
 int* pArgc = NULL;
 char** pArgv = NULL;
 
-unsigned int g_WindowWidth = 1024;
-unsigned int g_WindowHeight = 768;
+unsigned int g_WindowWidth = 640;
+unsigned int g_WindowHeight = 480;
 
 int g_iFrameToCompare = 10;
 
@@ -304,6 +305,9 @@ int main(int argc, char* argv[]) {
 			getCmdLineArgumentString(argc, (const char**)argv, "file", &ref_file);
 	}
 
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+
 	//
 	// create window
 	//
@@ -327,9 +331,15 @@ int main(int argc, char* argv[]) {
 	int xBorder = ::GetSystemMetrics(SM_CXSIZEFRAME);
 	int yMenu = ::GetSystemMetrics(SM_CYMENU);
 	int yBorder = ::GetSystemMetrics(SM_CYSIZEFRAME);
+
+
+	const DWORD dsStyle = WS_OVERLAPPEDWINDOW;
+	RECT rect = { 0, 0, (int)g_WindowWidth, (int)g_WindowHeight };
+	AdjustWindowRect(&rect, dsStyle, false);
+
 	HWND hWnd = CreateWindow(
-		wc.lpszClassName, "CUDA/D3D11 Texture InterOP", WS_OVERLAPPEDWINDOW, 0, 0,
-		g_WindowWidth + 2 * xBorder, g_WindowHeight + 2 * yBorder + yMenu, NULL,
+		wc.lpszClassName, "CUDA/D3D11 Texture InterOP", dsStyle, 0, 0,
+		rect.right - rect.left, rect.bottom - rect.top, NULL,
 		NULL, wc.hInstance, NULL);
 #else
 	static WNDCLASSEX wc = {
@@ -345,7 +355,6 @@ int main(int argc, char* argv[]) {
 	ShowWindow(hWnd, SW_SHOWDEFAULT);
 	UpdateWindow(hWnd);
 
-	RECT rect;
 	GetClientRect(hWnd, &rect);
 	g_WindowWidth = rect.right - rect.left;
 	g_WindowHeight = rect.bottom - rect.top;
@@ -358,8 +367,6 @@ int main(int argc, char* argv[]) {
 	CUDA::SetupOptix(g_WindowWidth, g_WindowHeight, (uint32_t)GetSurface().pitch, GetSurface().last_frame_surface);
 
 	// Setup Dear ImGui context
-	IMGUI_CHECKVERSION();
-	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
 
 	// Setup Dear ImGui style
@@ -713,6 +720,39 @@ void RunKernels(CUDARayTracer& raytracer) {
 			g_texture_2d.width * 4 * sizeof(float), g_texture_2d.height,  // extent
 			cudaMemcpyDeviceToDevice);                                    // kind
 		getLastCudaError("cudaMemcpy2DToArray failed");
+
+		if (gSaveImage)
+		{
+			gSaveImage = false;
+			std::vector<uint8_t> floatTexture(g_texture_2d.width * g_texture_2d.height * sizeof(glm::float4));
+
+			auto result = cudaMemcpy2D(
+				floatTexture.data(),
+				g_texture_2d.width * sizeof(glm::float4), 
+				g_texture_2d.cudaLinearMemory, g_texture_2d.pitch,  // src
+				g_texture_2d.width * sizeof(glm::float4), g_texture_2d.height,  // extent
+				cudaMemcpyDeviceToHost);                                    // kind
+			getLastCudaError("cudaMemcpy2DToArray failed");
+			cudaDeviceSynchronize();
+
+			struct RGBA
+			{
+				uint8_t r, g, b, a;
+			};
+			std::vector<RGBA> image8bpp(g_texture_2d.width * g_texture_2d.height);
+			for (uint32_t j = 0; j < (uint32_t)g_texture_2d.height; j++)
+				for(uint32_t i = 0; i < (uint32_t)g_texture_2d.width; i++)
+				{
+					const glm::vec4& src = (const glm::vec4&)floatTexture.at(j * g_texture_2d.width * sizeof(glm::float4) + sizeof(glm::float4) * i);
+					RGBA& rgba = image8bpp.at((g_texture_2d.height - 1 - j) * g_texture_2d.width + i);
+					rgba.r = static_cast<uint8_t>(std::min(src.r * 255, 255.0f));
+					rgba.g = static_cast<uint8_t>(std::min(src.g * 255, 255.0f));
+					rgba.b = static_cast<uint8_t>(std::min(src.b * 255, 255.0f));
+					rgba.a = static_cast<uint8_t>(std::min(src.a * 255, 255.0f));
+				}
+			
+			bool saved = Image::SaveAsPNG(image8bpp.data(), g_texture_2d.width, g_texture_2d.height, L"scene4-emission.png");
+		}
 	}
 
 	t += 0.1f;
@@ -848,6 +888,11 @@ static LRESULT WINAPI MsgProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
 	if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
 		return true;
+
+	if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) && ImGui::IsKeyDown(ImGuiKey_S))
+	{
+		gSaveImage = true;
+	}
 
 	switch (msg) {
 	case WM_KEYDOWN:

@@ -44,7 +44,7 @@ namespace Optix
 			return result;
 		}
 
-		Init Init::Spheres(std::span<const Device::Geometry::Sphere> spheres)
+		Init Init::Spheres(std::span<const Device::Scene::Sphere> spheres)
 		{
 			Init result;
 			result.data = std::span<const uint8_t>(reinterpret_cast<const uint8_t*>(spheres.data()), spheres.size_bytes());
@@ -55,8 +55,8 @@ namespace Optix
 			result.input.sphereArray.primitiveIndexOffset = 0;
 			result.input.sphereArray.singleRadius = 0;
 			result.input.sphereArray.sbtIndexOffsetBuffer = 0;
-			result.input.sphereArray.radiusStrideInBytes = sizeof(Device::Geometry::Sphere);
-			result.input.sphereArray.vertexStrideInBytes = sizeof(Device::Geometry::Sphere);
+			result.input.sphereArray.radiusStrideInBytes = sizeof(Device::Scene::Sphere);
+			result.input.sphereArray.vertexStrideInBytes = sizeof(Device::Scene::Sphere);
 			result.flags[0] = OPTIX_GEOMETRY_FLAG_NONE;
 
 			return result;

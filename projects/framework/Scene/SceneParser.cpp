@@ -65,6 +65,18 @@ namespace Loader::Scene
 				stream >> c.z;
 				currentInstance.specular = c;
 			}
+			else if (command == "emission")
+			{
+				glm::vec3 c;
+				stream >> c.x;
+				stream >> c.y;
+				stream >> c.z;
+				currentInstance.emission = c;
+			}
+			else if (command == "shininess")
+			{
+				stream >> currentInstance.shininess;
+			}
 			else if (command == "camera")
 			{
 				stream >> result.camera.from.x;
@@ -79,6 +91,34 @@ namespace Loader::Scene
 				stream >> result.camera.fovY;
 				result.camera.fovY = glm::radians(result.camera.fovY);
 				result.camera.matrix = glm::lookAtRH(result.camera.from, result.camera.to, result.camera.up);
+			}
+			else if (command == "directional")
+			{
+				DirectLight light;
+				stream >> light.direction.x;
+				stream >> light.direction.y;
+				stream >> light.direction.z;
+				stream >> light.color.x;
+				stream >> light.color.y;
+				stream >> light.color.z;
+				result.directLights.push_back(light);
+			}
+			else if (command == "point")
+			{
+				PointLight light;
+				stream >> light.position.x;
+				stream >> light.position.y;
+				stream >> light.position.z;
+				stream >> light.color.x;
+				stream >> light.color.y;
+				stream >> light.color.z;
+				result.pointLights.push_back(light);
+			}
+			else if (command == "attenuation")
+			{
+				stream >> result.constAttenuation;
+				stream >> result.linearAttenuation;
+				stream >> result.quadraticAttenuation;
 			}
 			else if (command == "sphere")
 			{
@@ -162,6 +202,10 @@ namespace Loader::Scene
 				stream >> s.y;
 				stream >> s.z;
 				currentInstance.transform = glm::scale(currentInstance.transform, s);
+			}
+			else
+			{
+				throw std::runtime_error("Unknown command");
 			}
 
 			if (!stream)

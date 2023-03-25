@@ -109,6 +109,10 @@ namespace CUDA
 		std::unique_ptr<CUDA::DeviceMemory> instanceData;
 		std::unique_ptr<CUDA::DeviceMemory> instanceExtraData;
 		std::unique_ptr<CUDA::DeviceMemory> triangleNormals;
+		std::unique_ptr<CUDA::DeviceMemory> directLights;
+		std::unique_ptr<CUDA::DeviceMemory> pointLights;
+		uint32_t directLightCount = 0;
+		uint32_t pointLightCount = 0;
 	};
 
 	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
@@ -161,6 +165,10 @@ namespace CUDA
 		result.instanceData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::InstanceData>(gpuInstanceData));
 		result.instanceExtraData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::InstanceExtraData>(gpuExtraInstanceData));
 		result.triangleNormals = std::make_unique<CUDA::DeviceMemory>(gsl::span<const glm::vec3>(gpuTriangleNormals));
+		result.directLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::DirectLight>(scene.directLights));
+		result.pointLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::PointLight>(scene.pointLights));
+		result.directLightCount = static_cast<uint32_t>(scene.directLights.size());
+		result.pointLightCount = static_cast<uint32_t>(scene.pointLights.size());
 
 		return result;
 	}
@@ -174,7 +182,8 @@ namespace CUDA
 			throw std::runtime_error("Failed to initialize optix");
 		}
 
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene3.test");
+		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene3.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene4-emission.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -219,11 +228,16 @@ namespace CUDA
 			params.instances = static_cast<const Device::InstanceData*>(renderData.instanceData->GetMemory());
 			params.instancesExtraData = static_cast<const Device::InstanceExtraData*>(renderData.instanceExtraData->GetMemory());
 			params.triangleNormals = static_cast<const glm::vec3*>(renderData.triangleNormals->GetMemory());
+			params.directLights = static_cast<const Device::Scene::DirectLight*>(renderData.directLights->GetMemory());
+			params.pointLights = static_cast<const Device::Scene::PointLight*>(renderData.pointLights->GetMemory());
+			params.directLightCount = renderData.directLightCount;
+			params.pointLightCount = renderData.pointLightCount;
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;
 			params.handle = renderData.toplevelAS->GetHandle();
 			params.cam_eye = cam.eye();
+			params.attenuation = glm::vec3(scene->constAttenuation, scene->linearAttenuation, scene->quadraticAttenuation);
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
 			Launch(params, pipeline, width, height);

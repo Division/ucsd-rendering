@@ -97,7 +97,7 @@ Device::RayPayload __device__ trace(OptixTraversableHandle handle, glm::vec3 ori
             (float3&)origin,
             (float3&)direction,
             0.0f,                // Min intersection distance
-            1e16f,               // Max intersection distance
+            1000.0f,               // Max intersection distance
             0.0f,                // rayTime -- used for motion blur
             OptixVisibilityMask( 255 ), // Specify always visible
             OPTIX_RAY_FLAG_NONE,
@@ -123,6 +123,44 @@ static __forceinline__ __device__ void computeRay( glm::uvec3 idx, glm::uvec3 di
     direction = glm::normalize( d.x * U + d.y * V + W );
 }
 
+
+glm::vec3 __device__ calculateLighting(const Device::RayPayload& payload)
+{
+    const Device::InstanceData& instanceData = params.instances[payload.values.instanceId];
+    glm::vec3 color(0, 0, 0);
+    color += instanceData.ambient + instanceData.emission;
+
+    const glm::vec3 N = payload.values.normal;
+    const glm::vec3 V = glm::normalize(payload.values.intersection - params.cam_eye);
+
+    for (uint32_t i = 0; i < params.directLightCount; i++)
+    {
+        const Device::Scene::DirectLight& directLight = params.directLights[i];
+        const glm::vec3 L = glm::normalize(-directLight.direction);
+        const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
+        const glm::vec3 H = glm::normalize(L + V);
+        const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
+        const glm::vec3 lightColor = directLight.color * (diffuse + specular);
+        color += lightColor;
+    }
+
+    for (uint32_t i = 0; i < params.pointLightCount; i++)
+    {
+        const Device::Scene::PointLight& pointLight = params.pointLights[i];
+        const glm::vec3 L = glm::normalize(pointLight.position - payload.values.intersection);
+        const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
+        const glm::vec3 H = glm::normalize(L + V);
+        const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
+        //const glm::vec3 specular = glm::vec3(pow(glm::max(glm::dot(N, H), 0.0f), 1 ));
+        const glm::vec3 lightColor = pointLight.color * (diffuse + specular);
+        const float R2 = glm::dot(L, L);
+        const float attenuation = params.attenuation.x + sqrt(R2) * params.attenuation.y + R2 * params.attenuation.z;
+        color += lightColor / attenuation;
+    }
+
+    return color;
+}
+
  
 extern "C" __global__ void __raygen__rg()
 {
@@ -138,25 +176,27 @@ extern "C" __global__ void __raygen__rg()
     // Trace the ray against our scene hierarchy
     Device::RayPayload payload = trace(params.handle, ray_origin, ray_direction);
 
-    float4 result;
+    glm::vec4 result;
 
     if (payload.values.instanceId != -1)
     {
-		result.x = payload.values.normal.x;
-		result.y = payload.values.normal.y;
-		result.z = payload.values.normal.z;
-		result = result * 0.5f + 0.5f;
-		result.w = 1.0f;
+        const glm::vec3 lighting = calculateLighting(payload);
+        result = glm::vec4(lighting, 1.0f);
+		//result.x = payload.values.normal.x;
+		//result.y = payload.values.normal.y;
+		//result.z = payload.values.normal.z;
+		//result = result * 0.5f + 0.5f;
+		//result.w = 1.0f;
     }
     else
     {
-        result = make_float4(0, 0, 0, 0);
+        result = glm::vec4(0, 0, 0, 0);
     }
 
 
     // Record results in our output raster
     float4* output = (float4*)(params.image + idx.x * sizeof(float4) + idx.y * params.pitch);
-    *output = result;
+    *output = (float4&)result;
 }
 
 
