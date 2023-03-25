@@ -183,7 +183,7 @@
     <CudaCompile Include="..\..\RayTracing\Random.cu">
       <Filter>Raytracing\kernel</Filter>
     </CudaCompile>
-    <CudaCompile Include="triangle.cu">
+    <CudaCompile Include="recursiveRayTracing.cu">
       <Filter>kernel</Filter>
     </CudaCompile>
   </ItemGroup>

@@ -97,7 +97,6 @@ namespace Loader::Scene
 				stream >> v.y;
 				stream >> v.z;
 				result.vertices.push_back(v);
-				result.normals.push_back({});
 			}
 			else if (command == "tri")
 			{
@@ -107,10 +106,14 @@ namespace Loader::Scene
 				stream >> t.v2;
 				currentInstance.triangles.push_back(t);
 
-				const glm::vec3 normal = glm::normalize(glm::cross(result.vertices[t.v2] - result.vertices[t.v1], result.vertices[t.v0] - result.vertices[t.v1]));
-				result.normals[t.v0] = normal;
-				result.normals[t.v1] = normal;
-				result.normals[t.v2] = normal;
+				glm::vec3 v0 = result.vertices[t.v0];
+				glm::vec3 v1 = result.vertices[t.v1];
+				glm::vec3 v2 = result.vertices[t.v2];
+
+				const glm::vec3 normal = glm::normalize(glm::cross(v2 - v1, v0 - v1));
+				currentInstance.normals.push_back(normal);
+				currentInstance.normals.push_back(normal);
+				currentInstance.normals.push_back(normal);
 			}
 			else if (command == "maxverts")
 			{
@@ -130,10 +133,8 @@ namespace Loader::Scene
 					return std::nullopt;
 				}
 
-				result.instances.push_back(currentInstance);
+				result.instances.push_back(std::move(currentInstance));
 				currentInstance.transform = transformStack.back();
-				currentInstance.spheres.clear();
-				currentInstance.triangles.clear();
 				transformStack.pop_back();
 			}
 			else if (command == "translate")

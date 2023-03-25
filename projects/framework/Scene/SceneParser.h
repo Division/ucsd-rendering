@@ -40,6 +40,7 @@ namespace Loader::Scene
 		glm::mat4 transform = glm::identity<glm::mat4>();
 		std::vector<Sphere> spheres;
 		std::vector<Triangle> triangles;
+		std::vector<glm::vec3> normals;
 	};
 
 	class TextScene
@@ -56,7 +57,6 @@ namespace Loader::Scene
 		std::vector<PointLight> pointLights;
 		std::vector<Instance> instances;
 		std::vector<glm::vec3> vertices;
-		std::vector<glm::vec3> normals;
 
 	public:
 

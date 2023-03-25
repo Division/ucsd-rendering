@@ -179,7 +179,7 @@
       <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CudaIntDirFullPath)\%(Filename)%(Extension).obj</CompileOut>
     </CudaCompile>
     <CudaCompile Include="..\..\RayTracing\Random.cu" />
-    <CudaCompile Include="triangle.cu">
+    <CudaCompile Include="recursiveRayTracing.cu">
       <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">optix-ir</NvccCompilation>
       <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateRelocatableDeviceCode>
       <GPUDebugInfo Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</GPUDebugInfo>

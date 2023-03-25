@@ -107,6 +107,8 @@ namespace CUDA
 		std::vector<std::unique_ptr<Acceleration::Structure>> instancesAS;
 		std::unique_ptr<Acceleration::Structure> toplevelAS;
 		std::unique_ptr<CUDA::DeviceMemory> instanceData;
+		std::unique_ptr<CUDA::DeviceMemory> instanceExtraData;
+		std::unique_ptr<CUDA::DeviceMemory> triangleNormals;
 	};
 
 	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
@@ -116,6 +118,8 @@ namespace CUDA
 		std::vector<glm::vec3> vertices;
 		std::vector<Acceleration::Init::Instance> instances;
 		std::vector<Device::InstanceData> gpuInstanceData;
+		std::vector<glm::vec3> gpuTriangleNormals;
+		std::vector<Device::InstanceExtraData> gpuExtraInstanceData;
 
 		for (auto& instance : scene.instances)
 		{
@@ -134,6 +138,10 @@ namespace CUDA
 				result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(triangles));
 				instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get() });
 				gpuInstanceData.push_back(instance);
+
+				Device::InstanceExtraData extraData{ .triangleNormalsOffset = static_cast<uint32_t>(gpuTriangleNormals.size()) };
+				gpuExtraInstanceData.push_back(extraData);
+				gpuTriangleNormals.insert(gpuTriangleNormals.end(), instance.normals.begin(), instance.normals.end());
 			}
 
 			if (instance.spheres.size())
@@ -142,12 +150,17 @@ namespace CUDA
 				result.instancesAS.push_back(std::make_unique<Acceleration::Structure>(spheres));
 				instances.push_back(Acceleration::Init::Instance{ .transform = instance.transform, .structure = result.instancesAS.back().get(), .sbtOffset = 1 });
 				gpuInstanceData.push_back(instance);
+
+				Device::InstanceExtraData extraData{};
+				gpuExtraInstanceData.push_back(extraData);
 			}
 		}
 
 		const auto toplevel = Acceleration::Init::Instances(instances);
 		result.toplevelAS = std::make_unique<Acceleration::Structure>(toplevel);
 		result.instanceData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::InstanceData>(gpuInstanceData));
+		result.instanceExtraData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::InstanceExtraData>(gpuExtraInstanceData));
+		result.triangleNormals = std::make_unique<CUDA::DeviceMemory>(gsl::span<const glm::vec3>(gpuTriangleNormals));
 
 		return result;
 	}
@@ -175,10 +188,10 @@ namespace CUDA
 		// Create program groups
 		//
 
-		ModuleInit moduleInit(L"data/kernel/triangle.cu.obj", 3, 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
+		ModuleInit moduleInit(L"data/kernel/recursiveRayTracing.cu.obj", Device::RayPayload::GetPayloadSize(), 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
 		const auto raygenIdx = moduleInit.AddRaygenProgram("__raygen__rg");
 		const auto missIdx = moduleInit.AddMissProgram("__miss__ms");
-		const auto hitIdx = moduleInit.AddHitProgram("__closesthit__ch", "", "", true);
+		const auto hitIdx = moduleInit.AddHitProgram("__closesthit__ch", "", "", false);
 		const auto hitSphereIdx = moduleInit.AddHitProgram("__closesthit__sphere", "", "", true);
 
 		Module module(moduleInit);
@@ -204,6 +217,8 @@ namespace CUDA
 			Device::Params params;
 			params.image = static_cast<uint8_t*>(outputBuffer);
 			params.instances = static_cast<const Device::InstanceData*>(renderData.instanceData->GetMemory());
+			params.instancesExtraData = static_cast<const Device::InstanceExtraData*>(renderData.instanceExtraData->GetMemory());
+			params.triangleNormals = static_cast<const glm::vec3*>(renderData.triangleNormals->GetMemory());
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;
