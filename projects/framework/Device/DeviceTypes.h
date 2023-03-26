@@ -6,6 +6,11 @@
 
 namespace Device
 {
+	struct Ray
+	{
+		glm::vec3 origin;
+		glm::vec3 direction;
+	};
 
 	namespace Scene
 	{
@@ -79,4 +84,5 @@ namespace Device
 
 		static constexpr uint32_t GetPayloadSize() { return sizeof(RayPayload) / sizeof(uint32_t); }
 	};
+
 }

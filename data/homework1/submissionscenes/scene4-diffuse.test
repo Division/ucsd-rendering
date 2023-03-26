@@ -180,5 +180,6 @@ diffuse 0 1 1
 translate -1.5 .8 0.65
 scale 0.4 0.4 0.4
 sphere 0 0 0 1
+popTransform
 
 

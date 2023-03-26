@@ -35,10 +35,6 @@
 
 #include "Device/DeviceTypes.h"
 
-struct RayGenData
-{
-    // No data needed
-};
 
 
 struct MissData
@@ -47,10 +43,6 @@ struct MissData
 };
 
 
-struct HitGroupData
-{
-    // No data needed
-};
 extern "C" {
 __constant__ Device::Params params;
 }
@@ -70,32 +62,19 @@ static __forceinline__ __device__ void setPayload(const Device::RayPayload& payl
 }
 
 
-static __forceinline__ __device__ Device::RayPayload getPayload()
+Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device::Ray& ray, bool terminateOnFirstHit = false)
 {
     Device::RayPayload payload;
 
-    payload.raw[0] = optixGetPayload_0();
-    payload.raw[1] = optixGetPayload_1();
-    payload.raw[2] = optixGetPayload_2();
-    payload.raw[3] = optixGetPayload_3();
-    payload.raw[4] = optixGetPayload_4();
-    payload.raw[5] = optixGetPayload_5();
-    payload.raw[6] = optixGetPayload_6();
-    payload.raw[7] = optixGetPayload_7();
-    payload.raw[8] = optixGetPayload_8();
+    uint32_t flags = OPTIX_RAY_FLAG_NONE;
 
-    return payload;
-}
-
-
-Device::RayPayload __device__ trace(OptixTraversableHandle handle, glm::vec3 origin, glm::vec3 direction)
-{
-    Device::RayPayload payload;
+    if (terminateOnFirstHit)
+        flags |= OPTIX_RAY_FLAG_TERMINATE_ON_FIRST_HIT;
 
     optixTrace(
             handle,
-            (float3&)origin,
-            (float3&)direction,
+            (float3&)ray.origin,
+            (float3&)ray.direction,
             0.0f,                // Min intersection distance
             1000.0f,               // Max intersection distance
             0.0f,                // rayTime -- used for motion blur
@@ -110,55 +89,117 @@ Device::RayPayload __device__ trace(OptixTraversableHandle handle, glm::vec3 ori
 }
 
 
-static __forceinline__ __device__ void computeRay( glm::uvec3 idx, glm::uvec3 dim, glm::vec3& origin, glm::vec3& direction )
+static __forceinline__ __device__ Device::Ray computeRay( glm::uvec3 idx, glm::uvec3 dim)
 {
     const glm::vec3 U = params.cam_u;
     const glm::vec3 V = params.cam_v;
     const glm::vec3 W = params.cam_w;
     const glm::vec2 d = 2.0f * glm::vec2(
-            static_cast<float>( idx.x ) / static_cast<float>( dim.x ),
-            static_cast<float>( idx.y ) / static_cast<float>( dim.y )) - 1.0f;
+            static_cast<float>( idx.x + 0.5 ) / static_cast<float>( dim.x ),
+            static_cast<float>( idx.y + 0.5 ) / static_cast<float>( dim.y )) - 1.0f;
 
-    origin    = params.cam_eye;
-    direction = glm::normalize( d.x * U + d.y * V + W );
+    return Device::Ray{ params.cam_eye, glm::normalize(d.x * U + d.y * V + W) };
 }
 
 
-glm::vec3 __device__ calculateLighting(const Device::RayPayload& payload)
+Device::Ray __device__ appendRayEpsilon(const Device::Ray& ray)
 {
-    const Device::InstanceData& instanceData = params.instances[payload.values.instanceId];
-    glm::vec3 color(0, 0, 0);
-    color += instanceData.ambient + instanceData.emission;
+    return Device::Ray{ ray.origin + ray.direction * 0.001f, ray.direction };
+}
 
-    const glm::vec3 N = payload.values.normal;
-    const glm::vec3 V = glm::normalize(payload.values.intersection - params.cam_eye);
+Device::Ray __device__ appendRayNormalEpsilon(const Device::Ray& ray, const glm::vec3& normal)
+{
+    return Device::Ray{ ray.origin + normal * 0.001f, ray.direction };
+}
 
-    for (uint32_t i = 0; i < params.directLightCount; i++)
+bool __device__ rayPayloadIsMiss(const Device::RayPayload& payload)
+{
+    return payload.values.instanceId == -1;
+}
+
+
+bool __device__ checkAnyHit(const Device::Ray& ray)
+{
+    auto result = trace(params.handle, ray, true);
+    return !rayPayloadIsMiss(result);
+}
+
+
+glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay)
+{
+    glm::vec3 colorSumm(0, 0, 0);
+
+	glm::vec3 throughput = glm::vec3(1.0f);
+	Device::Ray ray = initialRay;
+
+    for (uint32_t bounceIndex = 0; bounceIndex < 6; bounceIndex++)
     {
-        const Device::Scene::DirectLight& directLight = params.directLights[i];
-        const glm::vec3 L = glm::normalize(-directLight.direction);
-        const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
-        const glm::vec3 H = glm::normalize(L + V);
-        const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
-        const glm::vec3 lightColor = directLight.color * (diffuse + specular);
-        color += lightColor;
+        if (glm::dot(throughput, throughput) < 0.001f)
+        {
+            break;
+        }
+
+        // Trace the ray against our scene hierarchy
+        Device::RayPayload payload = trace(params.handle, ray);
+
+
+        if (rayPayloadIsMiss(payload))
+        {
+            break;
+        }
+
+        const Device::InstanceData& instanceData = params.instances[payload.values.instanceId];
+        glm::vec3 color(0, 0, 0);
+        color += instanceData.ambient + instanceData.emission;
+
+        const glm::vec3 N = glm::normalize(payload.values.normal);
+        const glm::vec3 V = glm::normalize(-ray.direction);
+
+        for (uint32_t i = 0; i < params.directLightCount; i++)
+        {
+            const Device::Scene::DirectLight& directLight = params.directLights[i];
+            const glm::vec3 L = glm::normalize(-directLight.direction);
+            if (checkAnyHit(appendRayEpsilon({ payload.values.intersection, L })))
+            {
+                continue;
+            }
+
+            const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
+            const glm::vec3 H = glm::normalize(L + V);
+            const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
+            const glm::vec3 lightColor = directLight.color * (diffuse + specular);
+            color += lightColor;
+        }
+
+        for (uint32_t i = 0; i < params.pointLightCount; i++)
+        {
+            const Device::Scene::PointLight& pointLight = params.pointLights[i];
+            glm::vec3 L = pointLight.position - payload.values.intersection;
+            const float R2 = glm::dot(L, L);
+            const float R = sqrt(R2);
+            L /= R;
+
+            if (checkAnyHit(appendRayNormalEpsilon({ payload.values.intersection, L }, N)))
+            {
+                continue;
+            }
+
+            const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
+            const glm::vec3 H = glm::normalize(L + V);
+            const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
+            const glm::vec3 lightColor = pointLight.color * (diffuse + specular);
+            const float attenuation = params.attenuation.x + R * params.attenuation.y + R2 * params.attenuation.z;
+            color += lightColor / attenuation;
+        }
+
+        colorSumm += color * throughput;
+
+        const glm::vec3 reflDir = glm::normalize(glm::reflect(ray.direction, N));
+        ray = appendRayNormalEpsilon({ payload.values.intersection, reflDir }, N);
+        throughput *= instanceData.specular;
     }
 
-    for (uint32_t i = 0; i < params.pointLightCount; i++)
-    {
-        const Device::Scene::PointLight& pointLight = params.pointLights[i];
-        const glm::vec3 L = glm::normalize(pointLight.position - payload.values.intersection);
-        const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
-        const glm::vec3 H = glm::normalize(L + V);
-        const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
-        //const glm::vec3 specular = glm::vec3(pow(glm::max(glm::dot(N, H), 0.0f), 1 ));
-        const glm::vec3 lightColor = pointLight.color * (diffuse + specular);
-        const float R2 = glm::dot(L, L);
-        const float attenuation = params.attenuation.x + sqrt(R2) * params.attenuation.y + R2 * params.attenuation.z;
-        color += lightColor / attenuation;
-    }
-
-    return color;
+    return colorSumm;
 }
 
  
@@ -170,29 +211,9 @@ extern "C" __global__ void __raygen__rg()
 
     // Map our launch idx to a screen location and create a ray from the camera
     // location through the screen
-    glm::vec3 ray_origin, ray_direction;
-    computeRay( idx, dim, ray_origin, ray_direction );
-
-    // Trace the ray against our scene hierarchy
-    Device::RayPayload payload = trace(params.handle, ray_origin, ray_direction);
-
-    glm::vec4 result;
-
-    if (payload.values.instanceId != -1)
-    {
-        const glm::vec3 lighting = calculateLighting(payload);
-        result = glm::vec4(lighting, 1.0f);
-		//result.x = payload.values.normal.x;
-		//result.y = payload.values.normal.y;
-		//result.z = payload.values.normal.z;
-		//result = result * 0.5f + 0.5f;
-		//result.w = 1.0f;
-    }
-    else
-    {
-        result = glm::vec4(0, 0, 0, 0);
-    }
-
+    const Device::Ray ray = computeRay(idx, dim);
+	const glm::vec3 lighting = calculateLighting(ray);
+    glm::vec4 result = glm::vec4(lighting, 1.0f);
 
     // Record results in our output raster
     float4* output = (float4*)(params.image + idx.x * sizeof(float4) + idx.y * params.pitch);
@@ -274,3 +295,4 @@ extern "C" __global__ void __closesthit__ch()
     payload.values.intersection = (glm::vec3&)world_raypos;
     setPayload(payload);
 }
+

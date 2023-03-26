@@ -183,7 +183,7 @@ namespace CUDA
 		}
 
 		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene3.test");
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene4-emission.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene4-specular.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
