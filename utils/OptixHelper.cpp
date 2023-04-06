@@ -234,7 +234,8 @@ namespace Optix
 	{
 		pipelineOptions = init.pipelineOptions;
 
-		OPTIX_CHECK_LOG(optixModuleCreateFromPTX(
+		
+		OPTIX_CHECK_LOG(optixModuleCreate(
 			GetContext(),
 			&init.moduleOptions,
 			&init.pipelineOptions,
@@ -346,7 +347,6 @@ namespace Optix
 	{
 		OptixPipelineLinkOptions pipeline_link_options = {};
 		pipeline_link_options.maxTraceDepth = init.maxTraceDepth;
-		pipeline_link_options.debugLevel = OPTIX_COMPILE_DEBUG_LEVEL_FULL;
 		OPTIX_CHECK_LOG(optixPipelineCreate(
 			GetContext(),
 			&module.GetPipelineOptions(),
@@ -360,7 +360,7 @@ namespace Optix
 		OptixStackSizes stack_sizes = {};
 		for (auto& prog_group : module.GetPrograms())
 		{
-			OPTIX_CHECK(optixUtilAccumulateStackSizes(prog_group, &stack_sizes));
+			OPTIX_CHECK(optixUtilAccumulateStackSizes(prog_group, &stack_sizes, nullptr));
 		}
 
 		uint32_t direct_callable_stack_size_from_traversal;
