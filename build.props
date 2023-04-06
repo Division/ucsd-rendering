@@ -5,7 +5,7 @@
   <PropertyGroup />
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(ProjectDir);C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.6.0\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.6.0\SDK\cuda;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.6.0\SDK;$(CUDA_PATH)\include;$(SolutionDir)include;$(SolutionDir);$(SolutionDir)\projects\framework</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>%(AdditionalIncludeDirectories);$(ProjectDir);C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\include;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\SDK\cuda;C:\ProgramData\NVIDIA Corporation\OptiX SDK 7.7.0\SDK;$(CUDA_PATH)\include;$(SolutionDir)include;$(SolutionDir);$(SolutionDir)\projects\framework</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup />
