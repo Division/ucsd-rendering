@@ -172,6 +172,12 @@
     <None Include="..\..\data\homework1\testscenes\scene1.test" />
     <None Include="..\..\data\homework1\testscenes\scene2.test" />
     <None Include="..\..\data\homework1\testscenes\scene3.test" />
+    <None Include="..\..\data\homework2\analytic.test" />
+    <None Include="..\..\data\homework2\cornell.test" />
+    <None Include="..\..\data\homework2\direct3x3.test" />
+    <None Include="..\..\data\homework2\direct9.test" />
+    <None Include="..\..\data\homework2\dragon.test" />
+    <None Include="..\..\data\homework2\sphere.test" />
     <None Include="..\..\README.md" />
   </ItemGroup>
   <ItemGroup>
@@ -179,6 +185,14 @@
       <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(CudaIntDirFullPath)\%(Filename)%(Extension).obj</CompileOut>
     </CudaCompile>
     <CudaCompile Include="..\..\RayTracing\Random.cu" />
+    <CudaCompile Include="analyticDirect.cu">
+      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(SolutionDir)data\kernel\%(Filename)%(Extension).obj</CompileOut>
+      <CompileOut Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(SolutionDir)data\kernel\%(Filename)%(Extension).obj</CompileOut>
+      <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateRelocatableDeviceCode>
+      <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</GenerateRelocatableDeviceCode>
+      <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">optix-ir</NvccCompilation>
+      <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Release|x64'">optix-ir</NvccCompilation>
+    </CudaCompile>
     <CudaCompile Include="recursiveRayTracing.cu">
       <NvccCompilation Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">optix-ir</NvccCompilation>
       <GenerateRelocatableDeviceCode Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</GenerateRelocatableDeviceCode>

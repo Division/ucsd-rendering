@@ -111,8 +111,12 @@ namespace CUDA
 		std::unique_ptr<CUDA::DeviceMemory> triangleNormals;
 		std::unique_ptr<CUDA::DeviceMemory> directLights;
 		std::unique_ptr<CUDA::DeviceMemory> pointLights;
+		std::unique_ptr<CUDA::DeviceMemory> quadLights;
+		std::unique_ptr<CUDA::DeviceMemory> sceneData;
 		uint32_t directLightCount = 0;
 		uint32_t pointLightCount = 0;
+		uint32_t quadLightCount = 0;
+		glm::vec3 attenuation = { 0, 0, 0 };
 	};
 
 	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
@@ -167,8 +171,20 @@ namespace CUDA
 		result.triangleNormals = std::make_unique<CUDA::DeviceMemory>(gsl::span<const glm::vec3>(gpuTriangleNormals));
 		result.directLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::DirectLight>(scene.directLights));
 		result.pointLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::PointLight>(scene.pointLights));
-		result.directLightCount = static_cast<uint32_t>(scene.directLights.size());
-		result.pointLightCount = static_cast<uint32_t>(scene.pointLights.size());
+		result.quadLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::QuadLight>(scene.quadLights));
+
+		Device::Scene::SceneData sceneData = {};
+		sceneData.directLightCount = static_cast<uint32_t>(scene.directLights.size());
+		sceneData.pointLightCount = static_cast<uint32_t>(scene.pointLights.size());
+		sceneData.quadLightCount = static_cast<uint32_t>(scene.quadLights.size());
+		sceneData.attenuation = glm::vec3(scene.constAttenuation, scene.linearAttenuation, scene.quadraticAttenuation);
+		sceneData.instances = static_cast<const Device::InstanceData*>(result.instanceData->GetMemory());
+		sceneData.instancesExtraData = static_cast<const Device::InstanceExtraData*>(result.instanceExtraData->GetMemory());
+		sceneData.triangleNormals = static_cast<const glm::vec3*>(result.triangleNormals->GetMemory());
+		sceneData.directLights = static_cast<const Device::Scene::DirectLight*>(result.directLights->GetMemory());
+		sceneData.pointLights = static_cast<const Device::Scene::PointLight*>(result.pointLights->GetMemory());
+		sceneData.quadLights = static_cast<const Device::Scene::QuadLight*>(result.quadLights->GetMemory());
+		result.sceneData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&sceneData), sizeof(sceneData)));
 
 		return result;
 	}
@@ -182,8 +198,8 @@ namespace CUDA
 			throw std::runtime_error("Failed to initialize optix");
 		}
 
-		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene3.test");
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene4-specular.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
+		//auto scene = Loader::Scene::ParseTextScene(L"data/homework2/analytic.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -196,6 +212,14 @@ namespace CUDA
 		//
 		// Create program groups
 		//
+
+		std::wstring optixrFile = L"data/kernel/recursiveRayTracing.cu.obj";
+
+		//if (scene->integratorType == Loader::Scene::IntegratorType::AnalyticDirect)
+		{
+			optixrFile = L"data/kernel/analyticDirect.cu.obj";
+		}
+
 
 		ModuleInit moduleInit(L"data/kernel/recursiveRayTracing.cu.obj", Device::RayPayload::GetPayloadSize(), 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
 		const auto raygenIdx = moduleInit.AddRaygenProgram("__raygen__rg");
@@ -225,19 +249,12 @@ namespace CUDA
 
 			Device::Params params;
 			params.image = static_cast<uint8_t*>(outputBuffer);
-			params.instances = static_cast<const Device::InstanceData*>(renderData.instanceData->GetMemory());
-			params.instancesExtraData = static_cast<const Device::InstanceExtraData*>(renderData.instanceExtraData->GetMemory());
-			params.triangleNormals = static_cast<const glm::vec3*>(renderData.triangleNormals->GetMemory());
-			params.directLights = static_cast<const Device::Scene::DirectLight*>(renderData.directLights->GetMemory());
-			params.pointLights = static_cast<const Device::Scene::PointLight*>(renderData.pointLights->GetMemory());
-			params.directLightCount = renderData.directLightCount;
-			params.pointLightCount = renderData.pointLightCount;
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;
 			params.handle = renderData.toplevelAS->GetHandle();
 			params.cam_eye = cam.eye();
-			params.attenuation = glm::vec3(scene->constAttenuation, scene->linearAttenuation, scene->quadraticAttenuation);
+			params.sceneData = reinterpret_cast<const Device::Scene::SceneData*>(renderData.sceneData->GetMemory());
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
 			Launch(params, pipeline, width, height);

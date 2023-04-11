@@ -114,6 +114,23 @@ namespace Loader::Scene
 				stream >> light.color.z;
 				result.pointLights.push_back(light);
 			}
+			else if (command == "quadLight")
+			{
+				QuadLight light;
+				stream >> light.origin.x;
+				stream >> light.origin.y;
+				stream >> light.origin.z;
+				stream >> light.va.x;
+				stream >> light.va.y;
+				stream >> light.va.z;
+				stream >> light.vb.x;
+				stream >> light.vb.y;
+				stream >> light.vb.z;
+				stream >> light.color.x;
+				stream >> light.color.y;
+				stream >> light.color.z;
+				result.quadLights.push_back(light);
+			}
 			else if (command == "attenuation")
 			{
 				stream >> result.constAttenuation;
@@ -202,6 +219,19 @@ namespace Loader::Scene
 				stream >> s.y;
 				stream >> s.z;
 				currentInstance.transform = glm::scale(currentInstance.transform, s);
+			}
+			else if (command == "integrator") 
+			{
+				std::string v;
+				stream >> v;
+				if (v == "analyticdirect")
+				{
+					result.integratorType = IntegratorType::AnalyticDirect;
+				}
+				else
+				{
+					throw std::runtime_error("unknown integrator type");
+				}
 			}
 			else
 			{
