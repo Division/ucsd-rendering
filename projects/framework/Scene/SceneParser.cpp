@@ -15,6 +15,7 @@ namespace Loader::Scene
 		std::vector<glm::mat4> transformStack;
 		transformStack.push_back(glm::identity<glm::mat4>());
 		Instance currentInstance;
+		bool instanceActive = false;
 
 		while (std::getline(fileStream, line))
 		{
@@ -164,6 +165,7 @@ namespace Loader::Scene
 			else if (command == "pushTransform")
 			{
 				transformStack.push_back(currentInstance.transform);
+				instanceActive = true;
 			}
 			else if (command == "popTransform")
 			{
@@ -173,9 +175,11 @@ namespace Loader::Scene
 					return std::nullopt;
 				}
 
-				result.instances.push_back(std::move(currentInstance));
+				if (instanceActive)
+					result.instances.push_back(std::move(currentInstance));
 				currentInstance.transform = transformStack.back();
 				transformStack.pop_back();
+				instanceActive = false;
 			}
 			else if (command == "translate")
 			{

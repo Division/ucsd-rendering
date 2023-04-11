@@ -183,7 +183,7 @@ namespace CUDA
 		}
 
 		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/testscenes/scene3.test");
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene4-specular.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -238,6 +238,7 @@ namespace CUDA
 			params.handle = renderData.toplevelAS->GetHandle();
 			params.cam_eye = cam.eye();
 			params.attenuation = glm::vec3(scene->constAttenuation, scene->linearAttenuation, scene->quadraticAttenuation);
+			params.maxBounces = scene->maxBounces;
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
 			Launch(params, pipeline, width, height);

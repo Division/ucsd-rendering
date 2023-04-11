@@ -95,45 +95,45 @@ tri 0 2 3
 popTransform
 
 #sphere
+pushTransform
 diffuse 0.7 0.5 0.2
 specular 0.2 0.2 0.2
-pushTransform
 translate 0 -0.7 -1.5
 scale 0.1 0.1 0.1
 sphere 0 0 0 1
 popTransform
 
 #sphere2
+pushTransform
 diffuse 0.7 0.5 0.2
 specular 0.2 0.2 0.2
-pushTransform
 translate 0.4 -0.9 -1
 scale 0.1 0.1 0.1
 sphere 0 0 0 1
 popTransform
 
 #sphere3
+pushTransform
 diffuse 0.7 0.5 0.2
 specular 0.2 0.2 0.2
-pushTransform
 translate -0.5 -0.7 -1.5
 scale 0.1 0.1 0.1
 sphere 0 0 0 1
 popTransform
 
 #sphere4
+pushTransform
 diffuse 0.7 0.5 0.2
 specular 0.2 0.2 0.2
-pushTransform
 translate 0.5 -0.5 -2
 scale 0.3 0.6 0.3
 sphere 0 0 0 1
 popTransform
 
 #cube
+pushTransform
 diffuse 0.5 0.7 0.2
 specular 0.2 0.2 0.2
-pushTransform
 translate -0.25 -0.4 -1.8
 rotate 0 1 0 15
 scale 0.25 0.4 0.2
@@ -154,9 +154,9 @@ tri 10 9 11
 popTransform
 
 #cube2
+pushTransform
 diffuse 0.2 0.5 0.7
 specular 0.2 0.2 0.2
-pushTransform
 translate 0.4 -0.7 -1.5
 rotate 0 1 0 -15
 scale 0.2 0.2 0.2

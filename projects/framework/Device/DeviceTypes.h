@@ -65,6 +65,7 @@ namespace Device
 		uint32_t directLightCount;
 		uint32_t pointLightCount;
 		glm::vec3 attenuation;
+		uint32_t maxBounces;
 	};
 
 
