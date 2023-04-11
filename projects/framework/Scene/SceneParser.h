@@ -4,7 +4,12 @@
 
 namespace Loader::Scene
 {
-
+	enum class IntegratorType
+	{
+		Default,
+		AnalyticDirect
+	};
+	
 	struct Camera
 	{
 		glm::vec3 from;
@@ -24,6 +29,7 @@ namespace Loader::Scene
 	typedef Device::Scene::Sphere Sphere;
 	typedef Device::Scene::DirectLight DirectLight;
 	typedef Device::Scene::PointLight PointLight;
+	typedef Device::Scene::QuadLight QuadLight;
 
 	struct Instance : public Device::InstanceData
 	{
@@ -45,8 +51,10 @@ namespace Loader::Scene
 		glm::vec3 attenuation = { 1, 0, 0 }; // x const, y linear, z quadratic
 		std::vector<DirectLight> directLights;
 		std::vector<PointLight> pointLights;
+		std::vector<QuadLight> quadLights;
 		std::vector<Instance> instances;
 		std::vector<glm::vec3> vertices;
+		IntegratorType integratorType = IntegratorType::Default;
 
 		float constAttenuation = 1;
 		float linearAttenuation = 0;

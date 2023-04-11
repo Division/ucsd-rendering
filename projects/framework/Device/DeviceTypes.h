@@ -12,6 +12,20 @@ namespace Device
 		glm::vec3 direction;
 	};
 
+	struct alignas(glm::vec4) InstanceData
+	{
+		glm::vec3 diffuse = {1, 1, 1};
+		glm::vec3 specular = {1, 1, 1};
+		float shininess = 0;
+		glm::vec3 emission = {0, 0, 0};
+		glm::vec3 ambient = { 0.2f, 0.2f, 0.2f };
+	};
+
+	struct alignas(glm::vec4) InstanceExtraData
+	{
+		uint32_t triangleNormalsOffset;
+	};
+
 	namespace Scene
 	{
 		struct Sphere
@@ -32,30 +46,32 @@ namespace Device
 			glm::vec3 color;
 		};
 
+		struct QuadLight
+		{
+			glm::vec3 origin;
+			glm::vec3 va;
+			glm::vec3 vb;
+			glm::vec3 color;
+		};
+
+		struct SceneData
+		{
+			const InstanceData* instances;
+			const InstanceExtraData* instancesExtraData;
+			const glm::vec3* triangleNormals;
+			const Scene::DirectLight* directLights;
+			const Scene::PointLight* pointLights;
+			const Scene::QuadLight* quadLights;
+			uint32_t directLightCount;
+			uint32_t pointLightCount;
+			uint32_t quadLightCount;
+			glm::vec3 attenuation;
+		};
 	}
-
-	struct alignas(glm::vec4) InstanceData
-	{
-		glm::vec3 diffuse = {1, 1, 1};
-		glm::vec3 specular = {1, 1, 1};
-		float shininess = 0;
-		glm::vec3 emission = {0, 0, 0};
-		glm::vec3 ambient = { 0.2f, 0.2f, 0.2f };
-	};
-
-	struct alignas(glm::vec4) InstanceExtraData
-	{
-		uint32_t triangleNormalsOffset;
-	};
 
 	struct Params
 	{
 		uint8_t* image;
-		const InstanceData* instances;
-		const InstanceExtraData* instancesExtraData;
-		const Scene::DirectLight* directLights;
-		const Scene::PointLight* pointLights;
-		const glm::vec3* triangleNormals;
 		unsigned int image_width;
 		unsigned int image_height;
 		unsigned int pitch;
@@ -66,6 +82,7 @@ namespace Device
 		uint32_t pointLightCount;
 		glm::vec3 attenuation;
 		uint32_t maxBounces;
+		const Scene::SceneData* sceneData;
 	};
 
 

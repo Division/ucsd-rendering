@@ -1,4 +1,3 @@
-
 //
 // Copyright (c) 2021, NVIDIA CORPORATION. All rights reserved.
 //
@@ -62,7 +61,7 @@ static __forceinline__ __device__ void setPayload(const Device::RayPayload& payl
 }
 
 
-Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device::Ray& ray, float minDist = 0.0f, float maxDist = 1000000.0f, bool terminateOnFirstHit = false)
+Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device::Ray& ray, bool terminateOnFirstHit = false, float maxDist = 1000.0f)
 {
     Device::RayPayload payload;
 
@@ -75,8 +74,8 @@ Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device:
             handle,
             (float3&)ray.origin,
             (float3&)ray.direction,
-            minDist,             // Min intersection distance
-            maxDist,             // Max intersection distance
+            0.0f,                // Min intersection distance
+            maxDist,               // Max intersection distance
             0.0f,                // rayTime -- used for motion blur
             OptixVisibilityMask( 255 ), // Specify always visible
             OPTIX_RAY_FLAG_NONE,
@@ -118,9 +117,9 @@ bool __device__ rayPayloadIsMiss(const Device::RayPayload& payload)
 }
 
 
-bool __device__ checkAnyHit(const Device::Ray& ray, float maxDist = 1000000.0f)
+bool __device__ checkAnyHit(const Device::Ray& ray, float maxDist = 1000.0f)
 {
-    auto result = trace(params.handle, ray, 0.0f, maxDist, true);
+    auto result = trace(params.handle, ray, true, maxDist);
     return !rayPayloadIsMiss(result);
 }
 
@@ -132,7 +131,7 @@ glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay)
 	glm::vec3 throughput = glm::vec3(1.0f);
 	Device::Ray ray = initialRay;
 
-    for (uint32_t bounceIndex = 0; bounceIndex <= params.maxBounces; bounceIndex++)
+    for (uint32_t bounceIndex = 0; bounceIndex < 6; bounceIndex++)
     {
         if (glm::dot(throughput, throughput) < 0.001f)
         {
@@ -158,7 +157,7 @@ glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay)
         for (uint32_t i = 0; i < params.sceneData->directLightCount; i++)
         {
             const Device::Scene::DirectLight& directLight = params.sceneData->directLights[i];
-            const glm::vec3 L = glm::normalize(directLight.direction);
+            const glm::vec3 L = glm::normalize(-directLight.direction);
             if (checkAnyHit(appendRayEpsilon({ payload.values.intersection, L })))
             {
                 continue;

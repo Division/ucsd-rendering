@@ -142,6 +142,12 @@
     <Filter Include="submissionscenes">
       <UniqueIdentifier>{84cc5328-b352-4dbf-b440-e7da0d93e173}</UniqueIdentifier>
     </Filter>
+    <Filter Include="submissionscenes\homework1">
+      <UniqueIdentifier>{2cd4b667-725f-412f-b8bc-9caf1df9ef6d}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="submissionscenes\homework2">
+      <UniqueIdentifier>{91cc3b26-1ed8-4170-bc88-5d5e6d2bbc59}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
@@ -154,26 +160,44 @@
     <None Include="..\..\data\homework1\testscenes\scene3.test">
       <Filter>testscenes</Filter>
     </None>
+    <None Include="..\..\data\homework1\submissionscenes\scene7.test">
+      <Filter>submissionscenes\homework1</Filter>
+    </None>
     <None Include="..\..\data\homework1\submissionscenes\scene4-ambient.test">
-      <Filter>submissionscenes</Filter>
+      <Filter>submissionscenes\homework1</Filter>
     </None>
     <None Include="..\..\data\homework1\submissionscenes\scene4-diffuse.test">
-      <Filter>submissionscenes</Filter>
+      <Filter>submissionscenes\homework1</Filter>
     </None>
     <None Include="..\..\data\homework1\submissionscenes\scene4-emission.test">
-      <Filter>submissionscenes</Filter>
+      <Filter>submissionscenes\homework1</Filter>
     </None>
     <None Include="..\..\data\homework1\submissionscenes\scene4-specular.test">
-      <Filter>submissionscenes</Filter>
+      <Filter>submissionscenes\homework1</Filter>
     </None>
     <None Include="..\..\data\homework1\submissionscenes\scene5.test">
-      <Filter>submissionscenes</Filter>
+      <Filter>submissionscenes\homework1</Filter>
     </None>
     <None Include="..\..\data\homework1\submissionscenes\scene6.test">
-      <Filter>submissionscenes</Filter>
+      <Filter>submissionscenes\homework1</Filter>
     </None>
-    <None Include="..\..\data\homework1\submissionscenes\scene7.test">
-      <Filter>submissionscenes</Filter>
+    <None Include="..\..\data\homework2\analytic.test">
+      <Filter>submissionscenes\homework2</Filter>
+    </None>
+    <None Include="..\..\data\homework2\cornell.test">
+      <Filter>submissionscenes\homework2</Filter>
+    </None>
+    <None Include="..\..\data\homework2\direct3x3.test">
+      <Filter>submissionscenes\homework2</Filter>
+    </None>
+    <None Include="..\..\data\homework2\direct9.test">
+      <Filter>submissionscenes\homework2</Filter>
+    </None>
+    <None Include="..\..\data\homework2\dragon.test">
+      <Filter>submissionscenes\homework2</Filter>
+    </None>
+    <None Include="..\..\data\homework2\sphere.test">
+      <Filter>submissionscenes\homework2</Filter>
     </None>
   </ItemGroup>
   <ItemGroup>
@@ -184,6 +208,9 @@
       <Filter>Raytracing\kernel</Filter>
     </CudaCompile>
     <CudaCompile Include="recursiveRayTracing.cu">
+      <Filter>kernel</Filter>
+    </CudaCompile>
+    <CudaCompile Include="analyticDirect.cu">
       <Filter>kernel</Filter>
     </CudaCompile>
   </ItemGroup>
