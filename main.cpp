@@ -751,7 +751,7 @@ void RunKernels(CUDARayTracer& raytracer) {
 					rgba.a = static_cast<uint8_t>(std::min(src.a * 255, 255.0f));
 				}
 			
-			bool saved = Image::SaveAsPNG(image8bpp.data(), g_texture_2d.width, g_texture_2d.height, L"scene6.png");
+			bool saved = Image::SaveAsPNG(image8bpp.data(), g_texture_2d.width, g_texture_2d.height, L"analytic.png");
 		}
 	}
 

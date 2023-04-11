@@ -1,3 +1,4 @@
+
 //
 // Copyright (c) 2021, NVIDIA CORPORATION. All rights reserved.
 //
@@ -33,6 +34,7 @@
 #include <sutil/vec_math.h>
 
 #include "Device/DeviceTypes.h"
+#include "glm/gtx/intersect.hpp"
 
 
 
@@ -61,7 +63,7 @@ static __forceinline__ __device__ void setPayload(const Device::RayPayload& payl
 }
 
 
-Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device::Ray& ray, bool terminateOnFirstHit = false, float maxDist = 1000.0f)
+Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device::Ray& ray, float minDist = 0.0f, float maxDist = 1000000.0f, bool terminateOnFirstHit = false)
 {
     Device::RayPayload payload;
 
@@ -74,8 +76,8 @@ Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device:
             handle,
             (float3&)ray.origin,
             (float3&)ray.direction,
-            0.0f,                // Min intersection distance
-            maxDist,               // Max intersection distance
+            minDist,             // Min intersection distance
+            maxDist,             // Max intersection distance
             0.0f,                // rayTime -- used for motion blur
             OptixVisibilityMask( 255 ), // Specify always visible
             OPTIX_RAY_FLAG_NONE,
@@ -117,88 +119,95 @@ bool __device__ rayPayloadIsMiss(const Device::RayPayload& payload)
 }
 
 
-bool __device__ checkAnyHit(const Device::Ray& ray, float maxDist = 1000.0f)
+bool __device__ checkAnyHit(const Device::Ray& ray, float maxDist = 1000000.0f)
 {
-    auto result = trace(params.handle, ray, true, maxDist);
+    auto result = trace(params.handle, ray, 0.0f, maxDist, true);
     return !rayPayloadIsMiss(result);
 }
 
 
 glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay)
 {
-    glm::vec3 colorSumm(0, 0, 0);
+	glm::vec3 colorSumm(0, 0, 0);
 
-	glm::vec3 throughput = glm::vec3(1.0f);
-	Device::Ray ray = initialRay;
+	const Device::Ray ray = initialRay;
 
-    for (uint32_t bounceIndex = 0; bounceIndex < 6; bounceIndex++)
+    for (uint32_t i = 0; i < params.sceneData->quadLightCount; i++)
     {
-        if (glm::dot(throughput, throughput) < 0.001f)
+        const Device::Scene::QuadLight& quadLight = params.sceneData->quadLights[i];
+        glm::vec3 v0, v1, v2, v3;
+        v0 = quadLight.origin;
+        v1 = quadLight.origin + quadLight.va;
+        v2 = quadLight.origin + quadLight.vb;
+        v3 = quadLight.origin + quadLight.va + quadLight.vb;
+
+        glm::vec2 bary;
+        float dist;
+        if (glm::intersectRayTriangle(ray.origin, ray.direction, v0, v1, v2, bary, dist) ||
+            glm::intersectRayTriangle(ray.origin, ray.direction, v1, v2, v3, bary, dist))
         {
-            break;
+            return quadLight.color;
         }
-
-        // Trace the ray against our scene hierarchy
-        Device::RayPayload payload = trace(params.handle, ray);
-
-
-        if (rayPayloadIsMiss(payload))
-        {
-            break;
-        }
-
-        const Device::InstanceData& instanceData = params.sceneData->instances[payload.values.instanceId];
-        glm::vec3 color(0, 0, 0);
-        color += instanceData.ambient + instanceData.emission;
-
-        const glm::vec3 N = glm::normalize(payload.values.normal);
-        const glm::vec3 V = glm::normalize(-ray.direction);
-
-        for (uint32_t i = 0; i < params.sceneData->directLightCount; i++)
-        {
-            const Device::Scene::DirectLight& directLight = params.sceneData->directLights[i];
-            const glm::vec3 L = glm::normalize(-directLight.direction);
-            if (checkAnyHit(appendRayEpsilon({ payload.values.intersection, L })))
-            {
-                continue;
-            }
-
-            const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
-            const glm::vec3 H = glm::normalize(L + V);
-            const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
-            const glm::vec3 lightColor = directLight.color * (diffuse + specular);
-            color += lightColor;
-        }
-
-        for (uint32_t i = 0; i < params.sceneData->pointLightCount; i++)
-        {
-            const Device::Scene::PointLight& pointLight = params.sceneData->pointLights[i];
-            glm::vec3 L = pointLight.position - payload.values.intersection;
-            const float R2 = glm::dot(L, L);
-            const float R = sqrt(R2);
-            L /= R;
-
-            if (checkAnyHit(appendRayNormalEpsilon({ payload.values.intersection, L }, N), R))
-            {
-                continue;
-            }
-
-            const glm::vec3 diffuse = instanceData.diffuse * glm::max(glm::dot(N, L), 0.0f);
-            const glm::vec3 H = glm::normalize(L + V);
-            const glm::vec3 specular = instanceData.specular * pow(glm::max(glm::dot(N, H), 0.0f), instanceData.shininess);
-            const glm::vec3 lightColor = pointLight.color * (diffuse + specular);
-            const float attenuation = params.sceneData->attenuation.x + R * params.sceneData->attenuation.y + R2 * params.sceneData->attenuation.z;
-            color += lightColor / attenuation;
-        }
-
-        colorSumm += color * throughput;
-
-        const glm::vec3 reflDir = glm::normalize(glm::reflect(ray.direction, N));
-        ray = appendRayNormalEpsilon({ payload.values.intersection, reflDir }, N);
-        throughput *= instanceData.specular;
     }
 
-    return colorSumm;
+	// Trace the ray against our scene hierarchy
+	Device::RayPayload payload = trace(params.handle, ray);
+
+	if (rayPayloadIsMiss(payload))
+	{
+		return colorSumm;
+	}
+
+	const Device::InstanceData& instanceData = params.sceneData->instances[payload.values.instanceId];
+	glm::vec3 color(0, 0, 0);
+	//color += instanceData.ambient + instanceData.emission;
+
+	const glm::vec3 N = glm::normalize(payload.values.normal);
+	const glm::vec3 r = payload.values.intersection;
+
+	for (uint32_t i = 0; i < params.sceneData->quadLightCount; i++)
+	{
+		const Device::Scene::QuadLight& quadLight = params.sceneData->quadLights[i];
+		glm::vec3 v0, v1, v2, v3;
+		v0 = quadLight.origin;
+		v1 = quadLight.origin + quadLight.va;
+		v2 = quadLight.origin + quadLight.va + quadLight.vb;
+		v3 = quadLight.origin + quadLight.vb;
+
+		glm::vec3 u0, u1, u2, u3;
+		u0 = glm::normalize(v0 - r);
+		u1 = glm::normalize(v1 - r);
+		u2 = glm::normalize(v2 - r);
+		u3 = glm::normalize(v3 - r);
+
+		float O0, O1, O2, O3;
+		O0 = acosf(glm::dot(u0, u1));
+		O1 = acosf(glm::dot(u1, u2));
+		O2 = acosf(glm::dot(u2, u3));
+		O3 = acosf(glm::dot(u3, u0));
+
+		glm::vec3 G0, G1, G2, G3;
+		G0 = glm::normalize(glm::cross(u0, u1));
+		G1 = glm::normalize(glm::cross(u1, u2));
+		G2 = glm::normalize(glm::cross(u2, u3));
+		G3 = glm::normalize(glm::cross(u3, u0));
+
+		glm::vec3 Fi = 0.5f * (O0 * G0 + O1 * G1 + O2 * G2 + O3 * G3);
+
+		const glm::vec3 direct = instanceData.diffuse / M_PIf * quadLight.color * glm::max(glm::dot(N, (Fi)), 0.0f);
+		//const glm::vec3 direct = instanceData.diffuse / M_PIf * quadLight.color * glm::dot(N, (Fi));
+		color += direct;
+
+  //      Fi = glm::normalize((v0 + v1 + v2 + v3) / 4.0f - r);
+		//color = glm::vec3(glm::dot(N, (Fi))) * 0.1f;
+        //color = (glm::normalize(Fi) + glm::vec3(1.0f)) * 0.5f;
+        //color = glm::normalize(Fi);// +glm::vec3(1.0f)) * 0.5f;
+        //color = glm::vec3(glm::length(Fi));
+	}
+
+	colorSumm += color;
+
+	return colorSumm;
 }
 
  

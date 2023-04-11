@@ -198,8 +198,8 @@ namespace CUDA
 			throw std::runtime_error("Failed to initialize optix");
 		}
 
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
-		//auto scene = Loader::Scene::ParseTextScene(L"data/homework2/analytic.test");
+		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework2/analytic.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -215,13 +215,13 @@ namespace CUDA
 
 		std::wstring optixrFile = L"data/kernel/recursiveRayTracing.cu.obj";
 
-		//if (scene->integratorType == Loader::Scene::IntegratorType::AnalyticDirect)
+		if (scene->integratorType == Loader::Scene::IntegratorType::AnalyticDirect)
 		{
 			optixrFile = L"data/kernel/analyticDirect.cu.obj";
 		}
 
 
-		ModuleInit moduleInit(L"data/kernel/recursiveRayTracing.cu.obj", Device::RayPayload::GetPayloadSize(), 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
+		ModuleInit moduleInit(optixrFile, Device::RayPayload::GetPayloadSize(), 3, OPTIX_PRIMITIVE_TYPE_FLAGS_TRIANGLE | OPTIX_PRIMITIVE_TYPE_FLAGS_SPHERE);
 		const auto raygenIdx = moduleInit.AddRaygenProgram("__raygen__rg");
 		const auto missIdx = moduleInit.AddMissProgram("__miss__ms");
 		const auto hitIdx = moduleInit.AddHitProgram("__closesthit__ch", "", "", false);
