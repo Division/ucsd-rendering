@@ -9,7 +9,13 @@
 #include "Scene/SceneParser.h"
 
 
+extern "C" 
+{
+	void init_rng(uint32_t thread_block_count, uint32_t thread_block_size, curandState* const rngStates, const unsigned int seed);
+}
+
 using namespace Optix;
+using namespace std::chrono;
 
 namespace
 {
@@ -113,13 +119,14 @@ namespace CUDA
 		std::unique_ptr<CUDA::DeviceMemory> pointLights;
 		std::unique_ptr<CUDA::DeviceMemory> quadLights;
 		std::unique_ptr<CUDA::DeviceMemory> sceneData;
+		std::unique_ptr<CUDA::DeviceMemory> rngState;
 		uint32_t directLightCount = 0;
 		uint32_t pointLightCount = 0;
 		uint32_t quadLightCount = 0;
 		glm::vec3 attenuation = { 0, 0, 0 };
 	};
 
-	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene)
+	SceneRenderData GetSceneRenderData(const Loader::Scene::TextScene& scene, const uint32_t width, const uint32_t height)
 	{
 		SceneRenderData result;
 
@@ -173,6 +180,13 @@ namespace CUDA
 		result.pointLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::PointLight>(scene.pointLights));
 		result.quadLights = std::make_unique<CUDA::DeviceMemory>(gsl::span<const Device::Scene::QuadLight>(scene.quadLights));
 
+		const auto pixel_count = width * height;
+		const uint32_t thread_block_size = 128;
+		const uint32_t thread_block_count = (pixel_count + thread_block_size - 1) / thread_block_size;
+		result.rngState = std::make_unique<CUDA::DeviceMemory>(sizeof(curandState) * thread_block_count * thread_block_size);
+		const uint32_t ms = (uint32_t)duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+		init_rng(thread_block_count, thread_block_size, static_cast<curandState*>(result.rngState->GetMemory()), 0xDEADBEEFu * ms);
+
 		Device::Scene::SceneData sceneData = {};
 		sceneData.directLightCount = static_cast<uint32_t>(scene.directLights.size());
 		sceneData.pointLightCount = static_cast<uint32_t>(scene.pointLights.size());
@@ -184,6 +198,7 @@ namespace CUDA
 		sceneData.directLights = static_cast<const Device::Scene::DirectLight*>(result.directLights->GetMemory());
 		sceneData.pointLights = static_cast<const Device::Scene::PointLight*>(result.pointLights->GetMemory());
 		sceneData.quadLights = static_cast<const Device::Scene::QuadLight*>(result.quadLights->GetMemory());
+		sceneData.rngState = static_cast<curandState*>(result.rngState->GetMemory());
 		result.sceneData = std::make_unique<CUDA::DeviceMemory>(gsl::span<const uint8_t>(reinterpret_cast<const uint8_t*>(&sceneData), sizeof(sceneData)));
 
 		return result;
@@ -199,13 +214,13 @@ namespace CUDA
 		}
 
 		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework2/analytic.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework2/direct3x3.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
 		}
 
-		SceneRenderData renderData = GetSceneRenderData(*scene);
+		SceneRenderData renderData = GetSceneRenderData(*scene, width, height);
 
 		OptixDeviceContext context = GetContext();
 		optixDeviceContextSetCacheEnabled(context, 0);
@@ -218,6 +233,10 @@ namespace CUDA
 		if (scene->integratorType == Loader::Scene::IntegratorType::AnalyticDirect)
 		{
 			optixrFile = L"data/kernel/analyticDirect.cu.obj";
+		}
+		else if (scene->integratorType == Loader::Scene::IntegratorType::Direct)
+		{
+			optixrFile = L"data/kernel/direct.cu.obj";
 		}
 
 
@@ -257,6 +276,8 @@ namespace CUDA
 			params.attenuation = glm::vec3(scene->constAttenuation, scene->linearAttenuation, scene->quadraticAttenuation);
 			params.maxBounces = scene->maxBounces;
 			params.sceneData = reinterpret_cast<const Device::Scene::SceneData*>(renderData.sceneData->GetMemory());
+			params.lightSamples = scene->lightSamples;
+			params.lightStratify = scene->lightStratify;
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
 			Launch(params, pipeline, width, height);

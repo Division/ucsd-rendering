@@ -38,6 +38,16 @@ namespace Loader::Scene
 			{
 				stream >> result.maxBounces;
 			}
+			else if (command == "lightsamples")
+			{
+				stream >> result.lightSamples;
+			}
+			else if (command == "lightstratify")
+			{
+				std::string str;
+				stream >> str;
+				result.lightStratify = str == "on";
+			}
 			else if (command == "output")
 			{
 				stream >> result.outputPath;
@@ -231,6 +241,10 @@ namespace Loader::Scene
 				if (v == "analyticdirect")
 				{
 					result.integratorType = IntegratorType::AnalyticDirect;
+				}
+				else if (v == "direct")
+				{
+					result.integratorType = IntegratorType::Direct;
 				}
 				else
 				{

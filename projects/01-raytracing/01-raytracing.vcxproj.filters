@@ -113,6 +113,9 @@
     <ClInclude Include="..\..\RayTracing\optix.h">
       <Filter>Raytracing</Filter>
     </ClInclude>
+    <ClInclude Include="random.h">
+      <Filter>kernel</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Raytracing">
@@ -211,6 +214,9 @@
       <Filter>kernel</Filter>
     </CudaCompile>
     <CudaCompile Include="analyticDirect.cu">
+      <Filter>kernel</Filter>
+    </CudaCompile>
+    <CudaCompile Include="direct.cu">
       <Filter>kernel</Filter>
     </CudaCompile>
   </ItemGroup>

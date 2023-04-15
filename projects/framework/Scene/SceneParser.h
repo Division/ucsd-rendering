@@ -7,7 +7,8 @@ namespace Loader::Scene
 	enum class IntegratorType
 	{
 		Default,
-		AnalyticDirect
+		AnalyticDirect,
+		Direct
 	};
 	
 	struct Camera
@@ -47,6 +48,8 @@ namespace Loader::Scene
 		glm::uvec2 size;
 		std::string outputPath;
 		uint32_t maxBounces = 5;
+		uint32_t lightSamples = 1;
+		bool lightStratify = false;
 		Camera camera;
 		glm::vec3 attenuation = { 1, 0, 0 }; // x const, y linear, z quadratic
 		std::vector<DirectLight> directLights;
