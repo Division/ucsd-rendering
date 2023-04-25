@@ -40,7 +40,6 @@ diffuse 0 0 0.8
 #sphere 0 0.8 -1.5 0.1
 
 
-pushTransform
 
 #red
 pushTransform
@@ -92,9 +91,9 @@ tri 0 2 3
 popTransform
 
 #cube
+pushTransform
 diffuse 0.8 0.8 0.8
 specular 0.2 0.2 0.2
-pushTransform
 translate -0.3 0.6 -0.2
 rotate 0 1 0 23
 scale 0.3 0.6 0.2
@@ -114,9 +113,9 @@ tri 10 9 11
 popTransform
 
 #sphere
+pushTransform
 diffuse 0.8 0.8 0.8
 specular 0.2 0.2 0.2
-pushTransform
 translate 0.3 0.3 0.2
 rotate 0 1 0 -20
 scale 0.3 0.3 0.3
@@ -125,4 +124,3 @@ sphere 0 0 0 1
 
 popTransform
 
-popTransform

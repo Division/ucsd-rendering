@@ -15,10 +15,14 @@ vertex -10 -1 10
 vertex 10 -1 -10
 vertex 10 -1 10
 
+pushTransform
+shininess 1
 diffuse 0.3 0.3 0.5
+specular 0 0 0 
 
 tri 0 1 2
 tri 1 3 2
+popTransform
 
 # Create a square area light source.
 

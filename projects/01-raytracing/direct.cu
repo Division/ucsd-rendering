@@ -128,6 +128,25 @@ bool __device__ checkAnyHit(const Device::Ray& ray, float maxDist = 1000000.0f)
 }
 
 
+glm::vec3 __device__ randomPointOnLight(RNG& rng, const Device::Scene::QuadLight& light, uint32_t index, uint32_t numSamples, bool stratify)
+{
+    const float u1 = rng.GetFloat01();
+    const float u2 = rng.GetFloat01();
+
+    if (!stratify)
+    {
+        return light.origin + u1 * light.va + u2 * light.vb;
+    }
+    else
+    {
+		const uint32_t M = (uint32_t)roundf(sqrtf(numSamples));
+        const uint32_t i = index % M;
+        const uint32_t j = index / M;
+        return light.origin + (j + u1) / (float)M * light.va + (i + u2) / (float)M * light.vb;
+    }
+}
+
+
 glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay, RNG& rng)
 {
 	glm::vec3 colorSumm(0, 0, 0);
@@ -162,54 +181,49 @@ glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay, RNG& rng)
 
 	const Device::InstanceData& instanceData = params.sceneData->instances[payload.values.instanceId];
 	glm::vec3 color(0, 0, 0);
-	//color += instanceData.ambient + instanceData.emission;
 
 	const glm::vec3 N = glm::normalize(payload.values.normal);
-	const glm::vec3 r = payload.values.intersection;
+	const glm::vec3 X0 = payload.values.intersection;
+	const glm::vec3 r = glm::normalize(glm::reflect(ray.direction, N));
 
 	for (uint32_t i = 0; i < params.sceneData->quadLightCount; i++)
 	{
 		const Device::Scene::QuadLight& quadLight = params.sceneData->quadLights[i];
-		glm::vec3 v0, v1, v2, v3;
-		v0 = quadLight.origin;
-		v1 = quadLight.origin + quadLight.va;
-		v2 = quadLight.origin + quadLight.va + quadLight.vb;
-		v3 = quadLight.origin + quadLight.vb;
+        const glm::vec3 Li = quadLight.color;
+        glm::vec3 Nl = glm::cross(quadLight.va, quadLight.vb);
+		const float A = glm::length(Nl);
+        Nl /= A;
 
-		glm::vec3 u0, u1, u2, u3;
-		u0 = glm::normalize(v0 - r);
-		u1 = glm::normalize(v1 - r);
-		u2 = glm::normalize(v2 - r);
-		u3 = glm::normalize(v3 - r);
+        const uint32_t NS = params.lightSamples;
+        const glm::vec3 LiAN = Li * A / (float)NS;
+        glm::vec3 summ(0, 0, 0);
 
-		float O0, O1, O2, O3;
-		O0 = acosf(glm::dot(u0, u1));
-		O1 = acosf(glm::dot(u1, u2));
-		O2 = acosf(glm::dot(u2, u3));
-		O3 = acosf(glm::dot(u3, u0));
+        for (uint32_t sampleIndex = 0; sampleIndex < NS; sampleIndex++)
+        {
+            const glm::vec3 X1 = randomPointOnLight(rng, quadLight, sampleIndex, NS, params.lightStratify);
 
-		glm::vec3 G0, G1, G2, G3;
-		G0 = glm::normalize(glm::cross(u0, u1));
-		G1 = glm::normalize(glm::cross(u1, u2));
-		G2 = glm::normalize(glm::cross(u2, u3));
-		G3 = glm::normalize(glm::cross(u3, u0));
+            glm::vec3 L = X1 - X0;
+            const float R2 = glm::dot(L, L);
+            const float R = sqrt(R2);
+            L /= R;
 
-		glm::vec3 Fi = 0.5f * (O0 * G0 + O1 * G1 + O2 * G2 + O3 * G3);
+            if (checkAnyHit(appendRayEpsilon({ X0, L }), R))
+            {
+                continue;
+            }
 
-		const glm::vec3 direct = instanceData.diffuse / M_PIf * quadLight.color * glm::max(glm::dot(N, (Fi)), 0.0f);
-		//const glm::vec3 direct = instanceData.diffuse / M_PIf * quadLight.color * glm::dot(N, (Fi));
-		color += direct;
+            const float G = glm::max(0.0f, glm::dot(N, L)) * glm::max(0.0f, glm::dot(Nl, L)) / R2;
+            const glm::vec3 BRDF = instanceData.diffuse / M_PIf + 
+                                   instanceData.specular * (instanceData.shininess + 2) / (M_PIf * 2.0f) *
+                                   glm::pow(glm::max(0.0f, glm::dot(r, L)), instanceData.shininess);
 
-  //      Fi = glm::normalize((v0 + v1 + v2 + v3) / 4.0f - r);
-		//color = glm::vec3(glm::dot(N, (Fi))) * 0.1f;
-        //color = (glm::normalize(Fi) + glm::vec3(1.0f)) * 0.5f;
-        //color = glm::normalize(Fi);// +glm::vec3(1.0f)) * 0.5f;
-        //color = glm::vec3(glm::length(Fi));
+            summ += BRDF * G;
+        }
+
+        color += LiAN * summ;
 	}
 
 	colorSumm += color;
-
-    colorSumm.x = rng.GetFloat01();
 
 	return colorSumm;
 }

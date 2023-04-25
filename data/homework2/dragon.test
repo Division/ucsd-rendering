@@ -50021,6 +50021,12 @@ vertex  5.0126 3.9222 0.2961
 vertex  -4.0968 7.6150 1.1201
 # 50000 vertexertices
 
+vertex -1 +1 0
+vertex -1 -1 0
+vertex +1 -1 0
+vertex +1 +1 0
+
+
 pushTransform
 translate 0 -5 0
 tri 1 2 3 
@@ -150026,16 +150032,11 @@ tri 29825 42257 47438
 
 popTransform
 
+pushTransform
 diffuse 0.7 0.7 0.7
 shininess 20
 specular 0 0 0
 
-vertex -1 +1 0
-vertex -1 -1 0
-vertex +1 -1 0
-vertex +1 +1 0
-
-pushTransform
 translate 0 -5 0
 rotate 1 0 0 -90
 scale 1000 1000 1000
