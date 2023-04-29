@@ -38,6 +38,18 @@ namespace Loader::Scene
 			{
 				stream >> result.spp;
 			}
+			else if (command == "nexteventestimation")
+			{
+				std::string str;
+				stream >> str;
+				result.nextEventEstimation = str == "on";
+			}
+			else if (command == "russianroulette")
+			{
+				std::string str;
+				stream >> str;
+				result.russianRoulette = str == "on";
+			}
 			else if (command == "maxdepth")
 			{
 				stream >> result.maxBounces;

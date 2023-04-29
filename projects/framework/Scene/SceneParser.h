@@ -51,6 +51,8 @@ namespace Loader::Scene
 		uint32_t spp = 1;
 		uint32_t maxBounces = 5;
 		uint32_t lightSamples = 1;
+		bool nextEventEstimation = false;
+		bool russianRoulette = false;
 		bool lightStratify = false;
 		Camera camera;
 		glm::vec3 attenuation = { 1, 0, 0 }; // x const, y linear, z quadratic

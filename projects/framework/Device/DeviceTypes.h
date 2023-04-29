@@ -88,6 +88,7 @@ namespace Device
 		uint16_t lightSamples;
 		const Scene::SceneData* sceneData;
 		uint8_t lightStratify;
+		uint8_t nextEventEstimation;
 	};
 
 

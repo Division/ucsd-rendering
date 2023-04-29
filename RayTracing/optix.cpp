@@ -214,8 +214,9 @@ namespace CUDA
 		}
 
 		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework3/cornellSimple.test");
-		//auto scene = Loader::Scene::ParseTextScene(L"data/homework2/direct9.test");
+		//auto scene = Loader::Scene::ParseTextScene(L"data/homework3/cornellNEE.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework3/dragon.test");
+		//auto scene = Loader::Scene::ParseTextScene(L"data/homework2/cornell.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -284,6 +285,7 @@ namespace CUDA
 			params.sceneData = reinterpret_cast<const Device::Scene::SceneData*>(renderData.sceneData->GetMemory());
 			params.lightSamples = scene->lightSamples;
 			params.lightStratify = scene->lightStratify;
+			params.nextEventEstimation = scene->nextEventEstimation;
 			cam.UVWFrame(params.cam_u, params.cam_v, params.cam_w);
 
 			Launch(params, pipeline, width, height);

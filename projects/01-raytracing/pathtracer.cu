@@ -92,14 +92,18 @@ Device::RayPayload __device__ trace(OptixTraversableHandle handle, const Device:
 }
 
 
-static __forceinline__ __device__ Device::Ray computeRay( glm::uvec3 idx, glm::uvec3 dim)
+static __forceinline__ __device__ Device::Ray computeRay(RNG& rng, glm::uvec3 idx, glm::uvec3 dim)
 {
     const glm::vec3 U = params.cam_u;
     const glm::vec3 V = params.cam_v;
     const glm::vec3 W = params.cam_w;
+
+    const float dx = rng.GetFloat01();
+    const float dy = rng.GetFloat01();
+
     const glm::vec2 d = 2.0f * glm::vec2(
-            static_cast<float>( idx.x + 0.5 ) / static_cast<float>( dim.x ),
-            static_cast<float>( idx.y + 0.5 ) / static_cast<float>( dim.y )) - 1.0f;
+            static_cast<float>( idx.x + dx) / static_cast<float>( dim.x ),
+            static_cast<float>( idx.y + dy ) / static_cast<float>( dim.y )) - 1.0f;
 
     return Device::Ray{ params.cam_eye, glm::normalize(d.x * U + d.y * V + W) };
 }
@@ -128,12 +132,22 @@ bool __device__ checkAnyHit(const Device::Ray& ray, float maxDist = 1000000.0f)
 }
 
 
-glm::vec3 __device__ randomPointOnLight(RNG& rng, const Device::Scene::QuadLight& light)
+glm::vec3 __device__ randomPointOnLight(RNG& rng, const Device::Scene::QuadLight& light, uint32_t index, uint32_t numSamples, bool stratify)
 {
     const float u1 = rng.GetFloat01();
     const float u2 = rng.GetFloat01();
 
-	return light.origin + u1 * light.va + u2 * light.vb;
+    if (!stratify)
+    {
+        return light.origin + u1 * light.va + u2 * light.vb;
+    }
+    else
+    {
+		const uint32_t M = (uint32_t)roundf(sqrtf(numSamples));
+        const uint32_t i = index % M;
+        const uint32_t j = index / M;
+        return light.origin + (j + u1) / (float)M * light.va + (i + u2) / (float)M * light.vb;
+    }
 }
 
 
@@ -153,7 +167,8 @@ bool __device__ intersectLight(const Device::Ray& ray, glm::vec3& out_color)
         if (glm::intersectRayTriangle(ray.origin, ray.direction, v0, v1, v2, bary, dist) ||
             glm::intersectRayTriangle(ray.origin, ray.direction, v1, v2, v3, bary, dist))
         {
-            if (dist < 0 || checkAnyHit(appendRayEpsilon(ray), dist))
+            if (dist < 0.0f)
+            //if (dist < 0.0f || checkAnyHit(appendRayEpsilon(ray), dist))
                 return false;
             out_color = quadLight.color;
             return true;
@@ -161,6 +176,56 @@ bool __device__ intersectLight(const Device::Ray& ray, glm::vec3& out_color)
     }
 
     return false;
+}
+
+
+glm::vec3 __device__ directLightSample(RNG& rng, const Device::RayPayload& payload, const Device::Ray& ray)
+{
+	const Device::InstanceData& instanceData = params.sceneData->instances[payload.values.instanceId];
+	glm::vec3 color(0, 0, 0);
+
+	const glm::vec3 N = glm::normalize(payload.values.normal);
+	const glm::vec3 X0 = payload.values.intersection;
+	const glm::vec3 r = glm::normalize(glm::reflect(ray.direction, N));
+
+	for (uint32_t i = 0; i < params.sceneData->quadLightCount; i++)
+	{
+		const Device::Scene::QuadLight& quadLight = params.sceneData->quadLights[i];
+        const glm::vec3 Li = quadLight.color;
+        glm::vec3 Nl = glm::cross(quadLight.va, quadLight.vb);
+		const float A = glm::length(Nl);
+        Nl /= A;
+
+        const uint32_t NS = 1;
+        const glm::vec3 LiAN = Li * A / (float)NS;
+        glm::vec3 summ(0, 0, 0);
+
+        for (uint32_t sampleIndex = 0; sampleIndex < NS; sampleIndex++)
+        {
+            const glm::vec3 X1 = randomPointOnLight(rng, quadLight, sampleIndex, NS, false);
+
+            glm::vec3 L = X1 - X0;
+            const float R2 = glm::dot(L, L);
+            const float R = sqrt(R2);
+            L /= R;
+
+            if (checkAnyHit(appendRayEpsilon({ X0, L }), R))
+            {
+                continue;
+            }
+
+            const float G = glm::max(0.0f, glm::dot(N, L)) * glm::max(0.0f, glm::dot(Nl, L)) / R2;
+            const glm::vec3 BRDF = instanceData.diffuse / M_PIf + 
+                                   instanceData.specular * (instanceData.shininess + 2) / (M_PIf * 2.0f) *
+                                   glm::pow(glm::max(0.0f, glm::dot(r, L)), instanceData.shininess);
+
+            summ += BRDF * G;
+        }
+
+        color += LiAN * summ;
+	}
+
+    return color;
 }
 
 
@@ -172,15 +237,19 @@ glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay, RNG& rng)
 	const uint32_t bounceIndex = 0;
     glm::vec3 throughput = glm::vec3(1);
 
-    const uint32_t maxBounces = 5;
-    for (uint32_t bounceIndex = 0; bounceIndex <= maxBounces; bounceIndex++)
+    const uint32_t maxBounces = 100000;
+    for (uint32_t bounceIndex = 0; bounceIndex < maxBounces; bounceIndex++)
     {
 		glm::vec3 color(0, 0, 0);
 
         if (intersectLight(ray, color))
         {
-			colorSumm += color * throughput;
-            break;
+            if (bounceIndex == 0)
+            {
+				colorSumm += color * throughput;
+            }
+
+			break;
         }
 
 		// Trace the ray against our scene hierarchy
@@ -190,6 +259,13 @@ glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay, RNG& rng)
 		{
              break;
 		}
+
+        colorSumm += directLightSample(rng, payload, ray) * throughput;
+
+        // Russian roulette
+        const float Q = 1.0f - fminf(fmaxf(fmaxf(throughput.x, throughput.y), throughput.z), 1.0f);
+        if (rng.GetFloat01() < Q)
+            break;
 
 		const Device::InstanceData& instanceData = params.sceneData->instances[payload.values.instanceId];
 
@@ -217,15 +293,17 @@ glm::vec3 __device__ calculateLighting(const Device::Ray& initialRay, RNG& rng)
         //return (L + 1.0f) / 2.0f;
 
         const glm::vec3 T = 2.0f * M_PIf * BRDF * NdotL;
-        ray = appendRayNormalEpsilon({ X0, newDir }, N);
+        ray = appendRayEpsilon({ X0, newDir });
         throughput *= T;
+        throughput /= 1.0f - Q;
         //throughput *= instanceData.diffuse;
     }
+
 
     return colorSumm;
 }
 
- 
+
 extern "C" __global__ void __raygen__rg()
 {
     // Lookup our location within the launch grid
@@ -234,17 +312,18 @@ extern "C" __global__ void __raygen__rg()
 
     // Map our launch idx to a screen location and create a ray from the camera
     // location through the screen
-    const Device::Ray ray = computeRay(idx, dim);
-
     RNG rng = GetRNGForPixel(dim.x, idx.x, idx.y);
 
+
     glm::vec3 totalLight(0);
-    for (uint32_t i = 0; i < params.spp; i++)
+    const uint32_t spp = params.spp;
+    for (uint32_t i = 0; i < spp; i++)
     {
+		const Device::Ray ray = computeRay(rng, idx, dim);
 		const glm::vec3 lighting = calculateLighting(ray, rng);
-        totalLight += lighting;
+        totalLight += lighting / (float)spp;
     }
-	glm::vec4 result = glm::vec4(totalLight / (float)params.spp, 1.0f);
+	glm::vec4 result = glm::vec4(totalLight, 1.0f);
 
     // Record results in our output raster
     float4* output = (float4*)(params.image + idx.x * sizeof(float4) + idx.y * params.pitch);
