@@ -34,6 +34,10 @@ namespace Loader::Scene
 				stream >> result.size.x;
 				stream >> result.size.y;
 			}
+			else if (command == "spp")
+			{
+				stream >> result.spp;
+			}
 			else if (command == "maxdepth")
 			{
 				stream >> result.maxBounces;
@@ -245,6 +249,10 @@ namespace Loader::Scene
 				else if (v == "direct")
 				{
 					result.integratorType = IntegratorType::Direct;
+				}
+				else if (v == "pathtracer")
+				{
+					result.integratorType = IntegratorType::PathTracer;
 				}
 				else
 				{

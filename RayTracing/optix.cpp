@@ -214,7 +214,8 @@ namespace CUDA
 		}
 
 		//auto scene = Loader::Scene::ParseTextScene(L"data/homework1/submissionscenes/scene6.test");
-		auto scene = Loader::Scene::ParseTextScene(L"data/homework2/direct3x3.test");
+		auto scene = Loader::Scene::ParseTextScene(L"data/homework3/cornellSimple.test");
+		//auto scene = Loader::Scene::ParseTextScene(L"data/homework2/direct9.test");
 		if (!scene)
 		{
 			throw std::runtime_error("Failed to load scene");
@@ -237,6 +238,10 @@ namespace CUDA
 		else if (scene->integratorType == Loader::Scene::IntegratorType::Direct)
 		{
 			optixrFile = L"data/kernel/direct.cu.obj";
+		}
+		else if (scene->integratorType == Loader::Scene::IntegratorType::PathTracer)
+		{
+			optixrFile = L"data/kernel/pathtracer.cu.obj";
 		}
 
 
@@ -268,6 +273,7 @@ namespace CUDA
 
 			Device::Params params;
 			params.image = static_cast<uint8_t*>(outputBuffer);
+			params.spp = scene->spp;
 			params.image_width = width;
 			params.image_height = height;
 			params.pitch = pitch;

@@ -8,7 +8,8 @@ namespace Loader::Scene
 	{
 		Default,
 		AnalyticDirect,
-		Direct
+		Direct,
+		PathTracer
 	};
 	
 	struct Camera
@@ -47,6 +48,7 @@ namespace Loader::Scene
 	public:
 		glm::uvec2 size;
 		std::string outputPath;
+		uint32_t spp = 1;
 		uint32_t maxBounces = 5;
 		uint32_t lightSamples = 1;
 		bool lightStratify = false;

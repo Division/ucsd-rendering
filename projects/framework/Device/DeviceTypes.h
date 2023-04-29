@@ -74,6 +74,7 @@ namespace Device
 	struct Params
 	{
 		uint8_t* image;
+		uint32_t spp;
 		unsigned int image_width;
 		unsigned int image_height;
 		unsigned int pitch;

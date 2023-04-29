@@ -151,6 +151,9 @@
     <Filter Include="submissionscenes\homework2">
       <UniqueIdentifier>{91cc3b26-1ed8-4170-bc88-5d5e6d2bbc59}</UniqueIdentifier>
     </Filter>
+    <Filter Include="submissionscenes\homework3">
+      <UniqueIdentifier>{ec5e1941-6bc0-4b98-b2a9-ccc9585796d1}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\..\README.md" />
@@ -202,6 +205,18 @@
     <None Include="..\..\data\homework2\sphere.test">
       <Filter>submissionscenes\homework2</Filter>
     </None>
+    <None Include="..\..\data\homework3\cornellNEE.test">
+      <Filter>submissionscenes\homework3</Filter>
+    </None>
+    <None Include="..\..\data\homework3\cornellRR.test">
+      <Filter>submissionscenes\homework3</Filter>
+    </None>
+    <None Include="..\..\data\homework3\cornellSimple.test">
+      <Filter>submissionscenes\homework3</Filter>
+    </None>
+    <None Include="..\..\data\homework3\dragon.test">
+      <Filter>submissionscenes\homework3</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="..\..\RayTracing\main_raytracing.cu">
@@ -217,6 +232,9 @@
       <Filter>kernel</Filter>
     </CudaCompile>
     <CudaCompile Include="direct.cu">
+      <Filter>kernel</Filter>
+    </CudaCompile>
+    <CudaCompile Include="pathtracer.cu">
       <Filter>kernel</Filter>
     </CudaCompile>
   </ItemGroup>

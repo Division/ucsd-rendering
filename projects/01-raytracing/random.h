@@ -16,6 +16,23 @@ struct RNG
 	__device__ float GetFloatNormal() { return curand_normal(state); }
 	__device__ glm::vec2 GetVec2Normal() { auto r1 = curand_normal2(state); return glm::vec2(r1.x, r1.y); }
 	__device__ glm::vec4 GetVec4Normal() { return glm::vec4(GetVec2Normal(), GetVec2Normal()); }
+	__device__ glm::vec3 GetRandomDirectionOnHemisphere(const glm::vec3 normal)
+	{
+		for (uint32_t i = 0; i < 1000; i++)
+		{
+			glm::vec3 dir = glm::vec3(GetFloat01(), GetFloat01(), GetFloat01()) * 2.0f - 1.0f;
+			const float sqLength = glm::dot(dir, dir);
+			if (sqLength < 1.0f && sqLength > 1e-4f)
+			{
+				dir /= sqrtf(sqLength);
+				const float cosA = glm::dot(normal, dir);
+				return cosA < 0 ? -dir : dir;
+			}
+		}
+
+		return normal;
+	}
+
 	__device__ glm::vec3 GetRandomPointOnSphere()
 	{
 		//return vec3(GetFloatNormal(), GetFloatNormal(), GetFloatNormal());
